@@ -1,1531 +1,576 @@
-/* =========================================
-   VIDHWAAN KIDLAB
-   ULTIMATE PRODUCTION APP.JS
-========================================= */
+name: Deploy-Vidhwaan-Science-Lab
 
-/* =========================================
-   SPLASH SCREEN
-========================================= */
+on:
 
-window.addEventListener(
-  "load",
-  () => {
 
-    setTimeout(() => {
+  workflow_dispatch:
 
-      document
-        .getElementById(
-          "appSplash"
-        )
-        ?.classList.add(
-          "hideSplash"
-        );
+jobs:
 
-    }, 700);
+  deploy:
 
-  }
-);
+    runs-on: ubuntu-latest
 
-/* =========================================
-   GLOBAL STATE
-========================================= */
+    permissions:
+      contents: read
 
-const APP = {
+    steps:
 
+      # ======================================
+      # CHECKOUT
+      # ======================================
 
-  currentGrade: "",
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  currentQuiz: null,
+      # ======================================
+      # SETUP NODE
+      # ======================================
 
-  currentQuizFile: "",
+      - name: Setup-Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-  currentQuestionIndex: 0,
+      # ======================================
+      # INSTALL DEPENDENCIES
+      # ======================================
 
-  currentScore: 0,
+      - name: Install-Dependencies
+        run: |
 
-  answered: false,
+          npm install \
+            javascript-obfuscator \
+            clean-css-cli \
+            html-minifier-terser \
+            terser \
+            fs-extra
 
-  loading: false
+      # ======================================
+      # CREATE BUILD ENGINE
+      # ======================================
 
-};
+      - name: Create-Build-Engine
+        run: |
 
-/* =========================================
-   ELEMENTS
-========================================= */
+          cat > build-production.js << 'EOF'
 
-const $ = id =>
-  document.getElementById(id);
+          const fs =
+            require("fs-extra");
 
-const pages = {
+          const crypto =
+            require("crypto");
 
-  login: $("loginPage"),
+          const {
+            execSync
+          } = require("child_process");
 
-  grades: $("gradePage"),
+          // ===================================
+          // HASH FUNCTION
+          // ===================================
 
-  quizList: $("quizListPage"),
+          function hashFile(content) {
 
-  quiz: $("quizPage"),
+            return crypto
+              .createHash("sha256")
+              .update(content)
+              .digest("hex")
+              .slice(0, 12);
 
-  score: $("scorePage")
+          }
 
-};
+          // ===================================
+          // RESET DIST
+          // ===================================
 
-const loginBtn =
-  $("loginBtn");
+          fs.removeSync("./dist");
 
-const loginError =
-  $("loginError");
+          fs.ensureDirSync("./dist");
 
+          // ===================================
+          // COPY PUBLIC
+          // ===================================
 
-const gradeGrid =
-  $("gradeGrid");
+          fs.copySync(
+            "./public",
+            "./dist"
+          );
 
-const quizGrid =
-  $("quizGrid");
-
-const quizListTitle =
-  $("quizListTitle");
-
-const questionText =
-  $("questionText");
-
-const questionImage =
-  $("questionImage");
-
-const questionImageWrap =
-  $("questionImageWrap");
-
-const optionsContainer =
-  $("optionsContainer");
-
-const answerResult =
-  $("answerResult");
-
-const explanationBox =
-  $("explanationBox");
-
-const lectureBox =
-  $("lectureBox");
-
-const lectureToggle =
-  $("lectureToggle");
-
-const nextQuestionBtn =
-  $("nextQuestionBtn");
-
-const questionCounter =
-  $("questionCounter");
-
-const finalScore =
-  $("finalScore");
-
-const scoreMessage =
-  $("scoreMessage");
-
-const installBtn =
-  $("installBtn");
-
-/* =========================================
-   SAFE CLICK
-========================================= */
-
-function bindClick(
-  id,
-  handler
-) {
-
-  const element = $(id);
-
-  if (element) {
-
-    element.addEventListener(
-      "click",
-      handler
-    );
-
-  }
-
-}
-
-/* =========================================
-   HELPERS
-========================================= */
-
-function safeText(value) {
-
-  if (
-    value === null ||
-    value === undefined
-  ) {
-
-    return "";
-
-  }
-
-  return String(value).trim();
-
-}
-
-function smoothTop() {
-
-  window.scrollTo({
-
-    top: 0,
-
-    behavior: "smooth"
-
-  });
-
-}
-
-function showPage(page) {
-
-  Object.values(pages)
-    .forEach(p => {
-
-      p?.classList.remove(
-        "active"
-      );
-
-    });
-
-  page?.classList.add(
-    "active"
-  );
-
-  smoothTop();
-
-}
-
-function sleep(ms) {
-
-  return new Promise(resolve => {
-
-    setTimeout(
-      resolve,
-      ms
-    );
-
-  });
-
-}
-
-/* =========================================
-   DAT DECODER
-========================================= */
-
-function decodeDatFile(scrambled) {
-
-  try {
-
-    const reversed =
-
-      scrambled
-        .split("")
-        .reverse()
-        .join("");
-
-    const binary =
-
-      Uint8Array.from(
-
-        atob(reversed),
-
-        char =>
-          char.charCodeAt(0)
-
-      );
-
-    return window.MessagePack.decode(
-      binary
-    );
-
-  } catch (error) {
-
-    console.error(
-      "DAT decode failed",
-      error
-    );
-
-    return null;
-
-  }
-
-}
-
-/* =========================================
-   LOAD DAT
-========================================= */
-
-async function loadDat(url) {
-
-  try {
-
-    const response =
-      await fetch(url, {
-
-        cache: "no-store"
-
-      });
-
-    if (!response.ok) {
-
-      throw new Error(
-        `Failed loading ${url}`
-      );
-
-    }
-
-    const text =
-      await response.text();
-
-    return decodeDatFile(text);
-
-  } catch (error) {
-
-    console.error(error);
-
-    return null;
-
-  }
-
-}
-
-/* =========================================
-   VILLAGE LOCATION ACCESS
-   FINAL STABLE PRODUCTION VERSION
-========================================= */
-
-const VILLAGE_CENTER = {
-
-  lat: 14.239078,
-  lng: 79.739651
-
-};
-
-const ALLOWED_RADIUS_KM = 2;
-
-/* =========================================
-   LIVE PROTECTION INTERVAL
-========================================= */
-
-let villageProtectionInterval = null;
-
-/* =========================================
-   DISTANCE CALCULATION
-========================================= */
-
-function calculateDistance(
-  lat1,
-  lon1,
-  lat2,
-  lon2
-) {
-
-  const R = 6371;
-
-  const dLat =
-
-    (lat2 - lat1) *
-    Math.PI / 180;
-
-  const dLon =
-
-    (lon2 - lon1) *
-    Math.PI / 180;
-
-  const a =
-
-    Math.sin(dLat / 2) *
-    Math.sin(dLat / 2)
-
-    +
-
-    Math.cos(
-      lat1 * Math.PI / 180
-    )
-
-    *
-
-    Math.cos(
-      lat2 * Math.PI / 180
-    )
-
-    *
-
-    Math.sin(dLon / 2) *
-    Math.sin(dLon / 2);
-
-  const c =
-
-    2 * Math.atan2(
-      Math.sqrt(a),
-      Math.sqrt(1 - a)
-    );
-
-  return R * c;
-
-}
-
-/* =========================================
-   RESET LOGIN BUTTON
-========================================= */
-
-function resetLoginButton() {
-
-  APP.loading = false;
-
-  loginBtn.disabled = false;
-
-  loginBtn.innerHTML =
-
-    "Enter Science Lab";
-
-}
-
-/* =========================================
-   LOCK SCIENCE LAB
-========================================= */
-
-function lockScienceLab(
-  message
-) {
-
-  APP.loading = false;
-
-  /* =========================
-     STOP PROTECTION
-  ========================= */
-
-  if (
-    villageProtectionInterval
-  ) {
-
-    clearInterval(
-      villageProtectionInterval
-    );
-
-    villageProtectionInterval =
-      null;
-
-  }
-
-  /* =========================
-     RESET UI
-  ========================= */
-
-  loginBtn.disabled = false;
-
-  loginBtn.innerHTML =
-
-    "Enter Science Lab";
-
-  loginError.textContent =
-    message;
-
-  /* =========================
-     FORCE LOGIN SCREEN
-  ========================= */
-
-  showPage(
-    pages.login
-  );
-
-}
-
-/* =========================================
-   VERIFY VILLAGE ACCESS
-========================================= */
-
-function verifyVillageAccess(
-  onSuccess = () => {}
-) {
-
-  /* =========================
-     GEOLOCATION SUPPORT
-  ========================= */
-
-  if (
-    !navigator.geolocation
-  ) {
-
-    lockScienceLab(
-
-      "Location is not supported on this device."
-
-    );
-
-    return;
-
-  }
-
-  /* =========================
-     REQUEST LOCATION
-  ========================= */
-
-  navigator.geolocation.getCurrentPosition(
-
-    position => {
-
-      const userLat =
-
-        position.coords.latitude;
-
-      const userLng =
-
-        position.coords.longitude;
-
-      const distance =
-
-        calculateDistance(
-
-          userLat,
-          userLng,
-
-          VILLAGE_CENTER.lat,
-          VILLAGE_CENTER.lng
-
-        );
-
-      /* =====================
-         INSIDE VILLAGE
-      ===================== */
-
-      if (
-        distance <=
-        ALLOWED_RADIUS_KM
-      ) {
-
-        onSuccess();
-
-      }
-
-      /* =====================
-         OUTSIDE VILLAGE
-      ===================== */
-
-      else {
-
-        lockScienceLab(
-
-          "This Science Lab works only inside Utukur village."
-
-        );
-
-      }
-
-    },
-
-    error => {
-
-      /* =====================
-         PERMISSION DENIED
-      ===================== */
-
-      if (
-        error.code === 1
-      ) {
-
-        lockScienceLab(
-
-          "Please allow location access to enter the Science Lab."
-
-        );
-
-      }
-
-      /* =====================
-         POSITION UNAVAILABLE
-      ===================== */
-
-      else if (
-        error.code === 2
-      ) {
-
-        lockScienceLab(
-
-          "Unable to detect your location."
-
-        );
-
-      }
-
-      /* =====================
-         TIMEOUT
-      ===================== */
-
-      else if (
-        error.code === 3
-      ) {
-
-        lockScienceLab(
-
-          "Location request timed out."
-
-        );
-
-      }
-
-      /* =====================
-         UNKNOWN ERROR
-      ===================== */
-
-      else {
-
-        lockScienceLab(
-
-          "Live location access required."
-
-        );
-
-      }
-
-    },
-
-    {
-
-      enableHighAccuracy: true,
-
-      timeout: 15000,
-
-      maximumAge: 0
-
-    }
-
-  );
-
-}
-
-/* =========================================
-   START LIVE VILLAGE PROTECTION
-========================================= */
-
-function startVillageProtection() {
-
-  /* =========================
-     PREVENT DUPLICATES
-  ========================= */
-
-  if (
-    villageProtectionInterval
-  ) {
-
-    clearInterval(
-      villageProtectionInterval
-    );
-
-  }
-
-  /* =========================
-     EVERY 15 MINUTES
-  ========================= */
-
-  villageProtectionInterval =
-
-    setInterval(() => {
-
-      verifyVillageAccess();
-
-    }, 900000);
-
-  /* =========================
-     APP RETURN CHECK
-  ========================= */
-
-  document.addEventListener(
-
-    "visibilitychange",
-
-    () => {
-
-      if (
-        document.visibilityState ===
-        "visible"
-      ) {
-
-        verifyVillageAccess();
-
-      }
-
-    }
-
-  );
-
-}
-
-/* =========================================
-   ENTER SCIENCE LAB
-========================================= */
-
-async function login() {
-
-  if (APP.loading) {
-    return;
-  }
-
-  APP.loading = true;
-
-  loginBtn.disabled = true;
-
-  loginBtn.innerHTML =
-
-    "Checking Village Access...";
-
-  loginError.textContent = "";
-
-  /* =========================
-     VERIFY ACCESS
-  ========================= */
-
-  verifyVillageAccess(
-
-    () => {
-
-      loginBtn.innerHTML =
-
-        "Welcome To Science Lab ✨";
-
-      setTimeout(() => {
-
-        APP.loading = false;
-
-        openGrades();
-
-        startVillageProtection();
-
-      }, 700);
-
-    }
-
-  );
-
-}
-
-/* =========================================
-   LOGIN BUTTON
-========================================= */
-
-bindClick(
-  "loginBtn",
-  login
-);
-
-/* =========================================
-   AUTO LOGIN SCREEN
-========================================= */
-
-async function autoLogin() {
-
-  showPage(
-    pages.login
-  );
-
-}
-
-
-/* =========================================
-   OPEN GRADES
-========================================= */
-
-function openGrades() {
-
-  showPage(
-    pages.grades
-  );
-
-  gradeGrid.innerHTML = "";
-
-  [
-
-    "grade2",
-    "grade3",
-    "grade4",
-    "grade5",
-    "grade6",
-    "grade7",
-    "grade8"
-
-  ].forEach(grade => {
-
-    const card =
-      document.createElement("div");
-
-    card.className = "card";
-
-    card.innerHTML = `
-      <div class="cardTitle">
-        ${grade.replace("grade", "Grade ")}
-      </div>
-    `;
-
-    card.onclick = () => {
-
-      APP.currentGrade = grade;
-
-      openQuizList();
-
-    };
-
-    gradeGrid.appendChild(card);
-
-  });
-
-}
-
-/* =========================================
-   QUIZ LIST
-========================================= */
-
-async function openQuizList() {
-
-  showPage(
-    pages.quizList
-  );
-
-  quizGrid.innerHTML = "";
-
-  quizListTitle.textContent =
-
-    APP.currentGrade.replace(
-      "grade",
-      "Grade "
-    );
-
-  const index =
-    await loadDat(
-
-      `./data/grades/${APP.currentGrade}/index.dat`
-
-    );
-
-  if (
-    !index ||
-    !index.files
-  ) {
-
-    quizGrid.innerHTML = `
-      <div class="card">
-        <div class="cardTitle">
-          No Quizzes Available
-        </div>
-      </div>
-    `;
-
-    return;
-
-  }
-
-  const progress =
-    JSON.parse(
-
-      localStorage.getItem(
-        "scienceProgress"
-      ) || "{}"
-
-    );
-
-  const unlocked =
-    progress[
-      APP.currentGrade
-    ] || 1;
-
-  index.files.forEach(
-    (file, indexNum) => {
-
-      const quizNumber =
-        indexNum + 1;
-
-      const isUnlocked =
-        quizNumber <= unlocked;
-
-      const card =
-        document.createElement("div");
-
-      card.className =
-
-        isUnlocked
-          ? "card"
-          : "card locked";
-
-      card.innerHTML = `
-        <div class="cardTitle">
-          Quiz ${quizNumber}
-        </div>
-
-        ${
-          isUnlocked
-            ? ""
-            : `
-              <div class="lockIcon">
-                🔒
-              </div>
-            `
-        }
-      `;
-
-      if (isUnlocked) {
-
-        card.onclick = () => {
-
-          loadQuiz(file);
-
-        };
-
-      }
-
-      quizGrid.appendChild(card);
-
-    }
-  );
-
-}
-
-/* =========================================
-   LOAD QUIZ
-========================================= */
-
-async function loadQuiz(file) {
-
-  const quiz =
-    await loadDat(
-
-      `./data/grades/${APP.currentGrade}/${file}`
-
-    );
-
-  if (
-    !quiz ||
-    !quiz.questions
-  ) {
-
-    alert(
-      "Unable to load quiz"
-    );
-
-    return;
-
-  }
-
-  APP.currentQuiz = quiz;
-
-  APP.currentQuizFile = file;
-
-  APP.currentQuestionIndex = 0;
-
-  APP.currentScore = 0;
-
-  APP.answered = false;
-
-  showPage(
-    pages.quiz
-  );
-
-  renderQuestion();
-
-}
-
-/* =========================================
-   RENDER QUESTION
-========================================= */
-
-function renderQuestion() {
-
-  const question =
-
-    APP.currentQuiz.questions[
-      APP.currentQuestionIndex
-    ];
-
-  if (!question) {
-    return;
-  }
-
-  APP.answered = false;
-
-  nextQuestionBtn.style.display =
-    "none";
-
-  answerResult.textContent = "";
-
-  explanationBox.style.display =
-    "none";
-
-  lectureBox.style.display =
-    "none";
-
-  lectureToggle.textContent =
-    "View Lecture";
-
-  questionCounter.textContent =
-
-    `Question ${
-      APP.currentQuestionIndex + 1
-    } / ${
-      APP.currentQuiz.questions.length
-    }`;
-
-  questionText.innerHTML =
-    safeText(question.q);
-
-  /* IMAGE */
-
-  questionImage.style.opacity =
-    "0.3";
-
-  if (question.img) {
-
-    questionImage.loading =
-      "lazy";
-
-    questionImage.decoding =
-      "async";
-
-    questionImage.src =
-      question.img;
-
-    questionImage.onload =
-      () => {
-
-        questionImage.style.opacity =
-          "1";
-
-      };
-
-    questionImage.onerror =
-      () => {
-
-        questionImageWrap.style.display =
-          "none";
-
-      };
-
-    questionImageWrap.style.display =
-      "block";
-
-  } else {
-
-    questionImage.removeAttribute(
-      "src"
-    );
-
-    questionImageWrap.style.display =
-      "none";
-
-  }
-
-  /* OPTIONS */
-
-  optionsContainer.innerHTML = "";
-
-  question.o.forEach(
-    (option, index) => {
-
-      const button =
-        document.createElement(
-          "button"
-        );
-
-      button.className =
-        "optionBtn";
-
-      button.textContent =
-        safeText(option);
-
-      button.onclick = () => {
-
-        selectAnswer(
-          index,
-          button
-        );
-
-      };
-
-      optionsContainer.appendChild(
-        button
-      );
-
-    }
-  );
-
-  /* EXPLANATION */
-
-  explanationBox.textContent =
-    safeText(question.e);
-
-  /* LECTURE */
-
-  const lecture =
-    Array.isArray(question.l)
-      ? question.l
-      : [question.l];
-
-  lectureBox.innerHTML =
-
-    lecture
-      .filter(Boolean)
-      .map(paragraph => {
-
-        return `
-          <p class="lectureParagraph">
-            ${safeText(paragraph)}
-          </p>
-        `;
-
-      })
-      .join("");
-
-  smoothTop();
-
-}
-
-/* =========================================
-   SELECT ANSWER
-========================================= */
-
-function selectAnswer(
-  selectedIndex,
-  button
-) {
-
-  if (APP.answered) {
-    return;
-  }
-
-  APP.answered = true;
-
-  const question =
-
-    APP.currentQuiz.questions[
-      APP.currentQuestionIndex
-    ];
-
-  const buttons =
-
-    document.querySelectorAll(
-      ".optionBtn"
-    );
-
-  buttons.forEach(
-    (btn, index) => {
-
-      btn.disabled = true;
-
-      if (
-        index === question.a
-      ) {
-
-        btn.classList.add(
-          "correct"
-        );
-
-      }
-
-    }
-  );
-
-  if (
-    selectedIndex ===
-    question.a
-  ) {
-
-    APP.currentScore++;
-
-    answerResult.textContent =
-      "✅ Correct";
-
-    answerResult.style.color =
-      "#2ecc71";
-
-  } else {
-
-    button.classList.add(
-      "wrong"
-    );
-
-    answerResult.textContent =
-      "❌ Wrong";
-
-    answerResult.style.color =
-      "#ff6b6b";
-
-  }
-
-  explanationBox.style.display =
-    "block";
-
-  nextQuestionBtn.style.display =
-    "block";
-
-}
-
-/* =========================================
-   NEXT QUESTION
-========================================= */
-
-bindClick(
-  "nextQuestionBtn",
-  () => {
-
-    APP.currentQuestionIndex++;
-
-    if (
-
-      APP.currentQuestionIndex >=
-      APP.currentQuiz.questions.length
-
-    ) {
-
-      finishQuiz();
-
-      return;
-
-    }
-
-    renderQuestion();
-
-  }
-);
-
-/* =========================================
-   FINISH QUIZ
-========================================= */
-
-function finishQuiz() {
-
-  showPage(
-    pages.score
-  );
-
-  finalScore.textContent =
-
-    `${APP.currentScore} / ${APP.currentQuiz.questions.length}`;
-
-  const passed =
-
-    APP.currentScore ===
-    APP.currentQuiz.questions.length;
-
-  if (passed) {
-
-    scoreMessage.textContent =
-      "Perfect Score — Next Quiz Unlocked";
-
-    unlockNextQuiz();
-
-  } else {
-
-    scoreMessage.textContent =
-      "Retry quiz to unlock next level.";
-
-  }
-
-}
-
-/* =========================================
-   UNLOCK NEXT QUIZ
-========================================= */
-
-function unlockNextQuiz() {
-
-  const progress =
-    JSON.parse(
-
-      localStorage.getItem(
-        "scienceProgress"
-      ) || "{}"
-
-    );
-
-  /* ==============================
-     CURRENT QUIZ NUMBER
-  ============================== */
-
-  const currentQuizNumber =
-
-    APP.currentQuestionIndex >= 0
-
-      ? parseInt(
-
-          APP.currentQuizFile
-            .replace(".dat", "")
-            .replace(/[^\d]/g, "")
-
-        )
-
-      : 1;
-
-  /* ==============================
-     NEXT QUIZ
-  ============================== */
-
-  const nextQuizNumber =
-    currentQuizNumber + 1;
-
-  /* ==============================
-     CURRENT UNLOCKED
-  ============================== */
-
-  const alreadyUnlocked =
-
-    progress[
-      APP.currentGrade
-    ] || 1;
-
-  /* ==============================
-     ONLY UNLOCK NEXT
-  ============================== */
-
-  if (
-    nextQuizNumber >
-    alreadyUnlocked
-  ) {
-
-    progress[
-      APP.currentGrade
-    ] = nextQuizNumber;
-
-    localStorage.setItem(
-
-      "scienceProgress",
-
-      JSON.stringify(
-        progress
-      )
-
-    );
-
-  }
-
-}
-
-/* =========================================
-   LECTURE TOGGLE
-========================================= */
-
-bindClick(
-  "lectureToggle",
-  () => {
-
-    if (!APP.answered) {
-      return;
-    }
-
-    const visible =
-
-      lectureBox.style.display ===
-      "block";
-
-    lectureBox.style.display =
-
-      visible
-        ? "none"
-        : "block";
-
-    lectureToggle.textContent =
-
-      visible
-        ? "View Lecture"
-        : "Hide Lecture";
-
-  }
-);
-
-/* =========================================
-   BUTTONS
-========================================= */
-
-bindClick(
-  "retakeBtn",
-  () => {
-
-    loadQuiz(
-      APP.currentQuizFile
-    );
-
-  }
-);
-
-bindClick(
-  "backToGrades",
-  openGrades
-);
-
-bindClick(
-  "backToQuizList",
-  openQuizList
-);
-
-bindClick(
-  "backToQuizPageBtn",
-  openQuizList
-);
-
-bindClick(
-  "logoutBtn",
-  () => {
-
-    location.reload();
-
-  }
-);
-
-/* =========================================
-   IMAGE FAILBACK
-========================================= */
-
-questionImage?.addEventListener(
-  "error",
-  () => {
-
-    questionImageWrap.style.display =
-      "none";
-
-  }
-);
-
-/* =========================================
-   PWA INSTALL
-========================================= */
-
-/* =========================================
-   PWA INSTALL
-========================================= */
-
-let deferredPrompt = null;
-
-/* =========================================
-   CHECK IF ALREADY INSTALLED
-========================================= */
-
-function isPWAInstalled() {
-
-  return (
-
-    window.matchMedia(
-      "(display-mode: standalone)"
-    ).matches ||
-
-    window.navigator.standalone === true
-
-  );
-
-}
-
-/* =========================================
-   SHOW INSTALL ONLY IF POSSIBLE
-========================================= */
-
-window.addEventListener(
-
-  "beforeinstallprompt",
-
-  event => {
-
-    event.preventDefault();
-
-    deferredPrompt = event;
-
-    if (
-      !isPWAInstalled()
-    ) {
-
-      installBtn?.classList.add(
-        "showInstall"
-      );
-
-    }
-
-  }
-);
-
-/* =========================================
-   INSTALL CLICK
-========================================= */
-
-installBtn?.addEventListener(
-  "click",
-  async () => {
-
-    if (
-      !deferredPrompt
-    ) {
-
-      alert(
-        "Install option not available on this device/browser."
-      );
-
-      return;
-
-    }
-
-    deferredPrompt.prompt();
-
-    const choice =
-      await deferredPrompt.userChoice;
-
-    if (
-      choice.outcome ===
-      "accepted"
-    ) {
-
-      installBtn.classList.remove(
-        "showInstall"
-      );
-
-    }
-
-    deferredPrompt = null;
-
-  }
-);
-
-/* =========================================
-   HIDE AFTER INSTALL
-========================================= */
-
-window.addEventListener(
-  "appinstalled",
-  () => {
-
-    installBtn?.classList.remove(
-      "showInstall"
-    );
-
-    deferredPrompt = null;
-
-  }
-);
-
-/* =========================================
-   SERVICE WORKER
-========================================= */
-
-if (
-  "serviceWorker" in navigator
-) {
-
-  window.addEventListener(
-    "load",
-    () => {
-
-      navigator.serviceWorker
-        .register("./sw.js")
-        .catch(console.error);
-
-    }
-  );
-
-}
-
-/* =========================================
-   MOBILE TOUCH
-========================================= */
-
-document.body.style.touchAction =
-  "pan-y";
-
-/* =========================================
-   START
-========================================= */
-
-autoLogin();
+          // ===================================
+          // COPY ROOT FILES
+          // ===================================
+
+          if (
+            fs.existsSync("./favicon.ico")
+          ) {
+
+            fs.copySync(
+              "./favicon.ico",
+              "./dist/favicon.ico"
+            );
+
+          }
+
+          // ===================================
+          // OBFUSCATE JS
+          // ===================================
+
+          console.log("");
+          console.log("================================");
+          console.log("OBFUSCATING JS");
+          console.log("================================");
+
+          execSync(`
+
+            npx javascript-obfuscator \
+              dist/app.js \
+              --output dist/app.js \
+              --compact true \
+              --control-flow-flattening false \
+              --control-flow-flattening-threshold 1 \
+              --dead-code-injection false \
+              --dead-code-injection-threshold 0.4 \
+              --disable-console-output true \
+              --identifier-names-generator hexadecimal \
+              --rename-globals false \
+              --rename-properties false \
+              --self-defending false \
+              --simplify true \
+              --split-strings true \
+              --split-strings-chunk-length 5 \
+              --string-array true \
+              --string-array-encoding base64 \
+              --string-array-threshold 1 \
+              --unicode-escape-sequence true
+
+          `, {
+            stdio: "inherit"
+          });
+
+          // ===================================
+          // MINIFY CSS
+          // ===================================
+
+          console.log("");
+          console.log("================================");
+          console.log("MINIFYING CSS");
+          console.log("================================");
+
+          execSync(`
+
+            npx cleancss \
+              -O2 \
+              -o dist/main.css \
+              public/main.css
+
+          `, {
+            stdio: "inherit"
+          });
+
+          // ===================================
+          // MINIFY HTML
+          // ===================================
+
+          console.log("");
+          console.log("================================");
+          console.log("MINIFYING HTML");
+          console.log("================================");
+
+          execSync(`
+
+            npx html-minifier-terser \
+              --collapse-whitespace \
+              --remove-comments \
+              --remove-redundant-attributes \
+              --remove-script-type-attributes \
+              --remove-tag-whitespace \
+              --use-short-doctype \
+              --minify-css true \
+              --minify-js true \
+              public/index.html \
+              -o dist/index.html
+
+          `, {
+            stdio: "inherit"
+          });
+
+          // ===================================
+          // MINIFY MODEL PAGE
+          // ===================================
+
+          if (
+            fs.existsSync(
+              "./public/model/index.html"
+            )
+          ) {
+
+            console.log("");
+            console.log("================================");
+            console.log("MINIFYING MODEL PAGE");
+            console.log("================================");
+
+            fs.ensureDirSync(
+              "./dist/model"
+            );
+
+            execSync(`
+
+              npx html-minifier-terser \
+                --collapse-whitespace \
+                --remove-comments \
+                --remove-redundant-attributes \
+                --remove-script-type-attributes \
+                --remove-tag-whitespace \
+                --use-short-doctype \
+                --minify-css true \
+                --minify-js true \
+                public/model/index.html \
+                -o dist/model/index.html
+
+            `, {
+              stdio: "inherit"
+            });
+
+          }
+
+
+          // ===================================
+          // PROTECT CAMPAIGN PAGE
+          // ===================================
+
+          if (
+            fs.existsSync(
+              "./public/campaign/index.html"
+            )
+          ) {
+
+            console.log("");
+            console.log("================================");
+            console.log("PROTECTING CAMPAIGN");
+            console.log("================================");
+
+            fs.ensureDirSync(
+              "./dist/campaign"
+            );
+
+            /* ==============================
+               OBFUSCATE CAMPAIGN JS
+            ============================== */
+
+            execSync(`
+
+              npx javascript-obfuscator \
+                public/campaign/app.js \
+                --output dist/campaign/app.js \
+                --compact true \
+                --control-flow-flattening false \
+                --dead-code-injection false \
+                --disable-console-output true \
+                --identifier-names-generator hexadecimal \
+                --rename-globals false \
+                --rename-properties false \
+                --self-defending false \
+                --simplify true \
+                --split-strings true \
+                --split-strings-chunk-length 5 \
+                --string-array true \
+                --string-array-encoding base64 \
+                --string-array-threshold 1 \
+                --unicode-escape-sequence true
+
+            `, {
+              stdio: "inherit"
+            });
+
+            /* ==============================
+               MINIFY CAMPAIGN CSS
+            ============================== */
+
+            execSync(`
+
+              npx cleancss \
+                -O2 \
+                -o dist/campaign/main.css \
+                public/campaign/main.css
+
+            `, {
+              stdio: "inherit"
+            });
+
+            /* ==============================
+               MINIFY CAMPAIGN HTML
+            ============================== */
+
+            execSync(`
+
+              npx html-minifier-terser \
+                --collapse-whitespace \
+                --remove-comments \
+                --remove-redundant-attributes \
+                --remove-script-type-attributes \
+                --remove-tag-whitespace \
+                --use-short-doctype \
+                --minify-css true \
+                --minify-js true \
+                public/campaign/index.html \
+                -o dist/campaign/index.html
+
+            `, {
+              stdio: "inherit"
+            });
+
+            /* ==============================
+               HASH CAMPAIGN FILES
+            ============================== */
+
+            const campaignJs =
+              fs.readFileSync(
+                "./dist/campaign/app.js",
+                "utf8"
+              );
+
+            const campaignCss =
+              fs.readFileSync(
+                "./dist/campaign/main.css",
+                "utf8"
+              );
+
+            const campaignJsHash =
+              hashFile(campaignJs);
+
+            const campaignCssHash =
+              hashFile(campaignCss);
+
+            const newCampaignJs =
+              `app.${campaignJsHash}.js`;
+
+            const newCampaignCss =
+              `main.${campaignCssHash}.css`;
+
+            fs.renameSync(
+              "./dist/campaign/app.js",
+              `./dist/campaign/${newCampaignJs}`
+            );
+
+            fs.renameSync(
+              "./dist/campaign/main.css",
+              `./dist/campaign/${newCampaignCss}`
+            );
+
+            /* ==============================
+               UPDATE HTML REFERENCES
+            ============================== */
+
+            let campaignHtml =
+              fs.readFileSync(
+                "./dist/campaign/index.html",
+                "utf8"
+              );
+
+            campaignHtml =
+              campaignHtml.replace(
+                "./app.js",
+                `./${newCampaignJs}`
+              );
+
+            campaignHtml =
+              campaignHtml.replace(
+                "./main.css",
+                `./${newCampaignCss}`
+              );
+
+            fs.writeFileSync(
+              "./dist/campaign/index.html",
+              campaignHtml
+            );
+
+            console.log("");
+            console.log("================================");
+            console.log("CAMPAIGN PROTECTED");
+            console.log("================================");
+
+          }
+
+          // ===================================
+          // MINIFY SERVICE WORKER
+          // ===================================
+
+          if (
+            fs.existsSync("./public/sw.js")
+          ) {
+
+            console.log("");
+            console.log("================================");
+            console.log("MINIFYING SW");
+            console.log("================================");
+
+            execSync(`
+
+              npx terser \
+                public/sw.js \
+                -o dist/sw.js \
+                --compress \
+                --mangle
+
+            `, {
+              stdio: "inherit"
+            });
+
+          }
+
+          // ===================================
+          // HASH ASSETS
+          // ===================================
+
+          const appJs =
+            fs.readFileSync(
+              "./dist/app.js",
+              "utf8"
+            );
+
+          const css =
+            fs.readFileSync(
+              "./dist/main.css",
+              "utf8"
+            );
+
+          const jsHash =
+            hashFile(appJs);
+
+          const cssHash =
+            hashFile(css);
+
+          const newJs =
+            `app.${jsHash}.js`;
+
+          const newCss =
+            `main.${cssHash}.css`;
+
+          fs.renameSync(
+            "./dist/app.js",
+            `./dist/${newJs}`
+          );
+
+          fs.renameSync(
+            "./dist/main.css",
+            `./dist/${newCss}`
+          );
+
+          // ===================================
+          // UPDATE HTML REFERENCES
+          // ===================================
+
+          let html =
+            fs.readFileSync(
+              "./dist/index.html",
+              "utf8"
+            );
+
+          html = html.replace(
+            "./app.js",
+            `./${newJs}`
+          );
+
+          html = html.replace(
+            "./main.css",
+            `./${newCss}`
+          );
+
+          fs.writeFileSync(
+            "./dist/index.html",
+            html
+          );
+
+          // ===================================
+          // LOGS
+          // ===================================
+
+          console.log("");
+          console.log("================================");
+          console.log("PRODUCTION BUILD COMPLETE");
+          console.log("================================");
+          console.log("");
+
+          console.log(
+            "JS:",
+            newJs
+          );
+
+          console.log(
+            "CSS:",
+            newCss
+          );
+
+          console.log("");
+          console.log("================================");
+
+          EOF
+
+      # ======================================
+      # BUILD
+      # ======================================
+
+      - name: Build-Production
+        run: |
+
+          node build-production.js
+
+      # ======================================
+      # SHOW DIST FILES
+      # ======================================
+
+      - name: Show-Dist
+        run: |
+
+          echo "================================"
+          echo "DIST FILES"
+          echo "================================"
+
+          find dist -type f
+
+      # ======================================
+      # INSTALL WRANGLER
+      # ======================================
+
+      - name: Install-Wrangler
+        run: |
+
+          npm install -g wrangler@4.95.0
+
+      # ======================================
+      # VERIFY WRANGLER
+      # ======================================
+
+      - name: Verify-Wrangler
+        run: |
+
+          wrangler --version
+
+      # ======================================
+      # CREATE CLOUDFLARE PROJECT
+      # ======================================
+
+      - name: Create-Cloudflare-Project
+        run: |
+
+          wrangler pages project create labx26 \
+            --production-branch main || true
+
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # ======================================
+      # DEPLOY TO CLOUDFLARE PAGES
+      # ======================================
+
+      - name: Deploy-To-Cloudflare
+        run: |
+
+          wrangler pages deploy dist \
+            --project-name=labx26 \
+            --commit-dirty=true
+
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
