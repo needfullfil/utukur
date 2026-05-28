@@ -298,35 +298,74 @@ async function loadDat(url) {
 }
 
 /* =========================================
-   LOAD CREDENTIALS
+   VILLAGE LOCATION ACCESS
 ========================================= */
 
-async function loadCredentials() {
+const VILLAGE_CENTER = {
 
-  const data =
-    await loadDat(
-      "./data/credentials.dat"
+  lat: 14.239078,
+
+  lng: 79.739651
+
+};
+
+const ALLOWED_RADIUS_KM = 2;
+
+/* =========================================
+   DISTANCE CALCULATION
+========================================= */
+
+function calculateDistance(
+  lat1,
+  lon1,
+  lat2,
+  lon2
+) {
+
+  const R = 6371;
+
+  const dLat =
+    (lat2 - lat1) *
+    Math.PI / 180;
+
+  const dLon =
+    (lon2 - lon1) *
+    Math.PI / 180;
+
+  const a =
+
+    Math.sin(dLat / 2) *
+    Math.sin(dLat / 2)
+
+    +
+
+    Math.cos(
+      lat1 * Math.PI / 180
+    )
+
+    *
+
+    Math.cos(
+      lat2 * Math.PI / 180
+    )
+
+    *
+
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+
+  const c =
+    2 * Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1 - a)
     );
 
-  if (
-    !Array.isArray(data)
-  ) {
-
-    loginError.textContent =
-      "Unable to load credentials";
-
-    return false;
-
-  }
-
-  APP.credentials = data;
-
-  return true;
+  return R * c;
 
 }
 
 /* =========================================
-   LOGIN
+   ENTER APP
 ========================================= */
 
 async function login() {
@@ -340,57 +379,96 @@ async function login() {
   loginBtn.disabled = true;
 
   loginBtn.textContent =
-    "Checking...";
+    "Checking Location...";
 
   loginError.textContent = "";
 
-  const username =
-    safeText(
-      usernameInput.value
-    );
-
-  const password =
-    safeText(
-      passwordInput.value
-    );
-
-  await sleep(200);
-
-  const matched =
-    APP.credentials.find(user => {
-
-      return (
-
-        safeText(user.u) ===
-          username &&
-
-        safeText(user.p) ===
-          password
-
-      );
-
-    });
-
-  if (!matched) {
+  if (
+    !navigator.geolocation
+  ) {
 
     loginError.textContent =
-      "Invalid username or password";
+      "Location not supported on this device.";
 
-    loginBtn.disabled = false;
-
-    loginBtn.textContent =
-      "Enter Science Lab";
-
-    APP.loading = false;
+    resetLoginButton();
 
     return;
 
   }
 
-  localStorage.setItem(
-    "scienceUser",
-    username
+  navigator.geolocation.getCurrentPosition(
+
+    position => {
+
+      const userLat =
+        position.coords.latitude;
+
+      const userLng =
+        position.coords.longitude;
+
+      const distance =
+
+        calculateDistance(
+
+          userLat,
+          userLng,
+
+          VILLAGE_CENTER.lat,
+          VILLAGE_CENTER.lng
+
+        );
+
+      if (
+        distance <=
+        ALLOWED_RADIUS_KM
+      ) {
+
+        localStorage.setItem(
+          "villageAccess",
+          "true"
+        );
+
+        openGrades();
+
+      } else {
+
+        loginError.textContent =
+          "You should be inside village to use this app.";
+
+      }
+
+      resetLoginButton();
+
+    },
+
+    () => {
+
+      loginError.textContent =
+        "Location permission required.";
+
+      resetLoginButton();
+
+    },
+
+    {
+
+      enableHighAccuracy: true,
+
+      timeout: 10000,
+
+      maximumAge: 0
+
+    }
+
   );
+
+}
+
+/* =========================================
+   RESET BUTTON
+========================================= */
+
+function resetLoginButton() {
 
   APP.loading = false;
 
@@ -399,49 +477,29 @@ async function login() {
   loginBtn.textContent =
     "Enter Science Lab";
 
-  openGrades();
-
 }
+
+/* =========================================
+   BUTTON
+========================================= */
 
 bindClick(
   "loginBtn",
   login
 );
 
-passwordInput?.addEventListener(
-  "keydown",
-  event => {
-
-    if (
-      event.key === "Enter"
-    ) {
-
-      login();
-
-    }
-
-  }
-);
-
 /* =========================================
-   AUTO LOGIN
+   AUTO ACCESS
 ========================================= */
 
 async function autoLogin() {
 
-  const loaded =
-    await loadCredentials();
-
-  if (!loaded) {
-    return;
-  }
-
   const existing =
     localStorage.getItem(
-      "scienceUser"
+      "villageAccess"
     );
 
-  if (existing) {
+  if (existing === "true") {
 
     openGrades();
 
