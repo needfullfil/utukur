@@ -553,7 +553,8 @@ jobs:
       - name: Create-Cloudflare-Project
         run: |
 
-          wrangler pages project create labx26
+          wrangler pages project create labx26 \
+            --production-branch main
 
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
