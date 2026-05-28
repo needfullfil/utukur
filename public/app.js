@@ -293,7 +293,7 @@ async function loadDat(url) {
 
 /* =========================================
    VILLAGE LOCATION ACCESS
-   FINAL STABLE PRODUCTION VERSION
+   FINAL PRODUCTION VERSION
 ========================================= */
 
 const VILLAGE_CENTER = {
@@ -384,7 +384,7 @@ function resetLoginButton() {
 }
 
 /* =========================================
-   LOCK SCIENCE LAB
+   FORCE LOCK APP
 ========================================= */
 
 function lockScienceLab(
@@ -411,7 +411,7 @@ function lockScienceLab(
   }
 
   /* =========================
-     RESET UI
+     RESET BUTTON
   ========================= */
 
   loginBtn.disabled = false;
@@ -424,7 +424,7 @@ function lockScienceLab(
     message;
 
   /* =========================
-     FORCE LOGIN SCREEN
+     RETURN LOGIN SCREEN
   ========================= */
 
   showPage(
@@ -434,11 +434,12 @@ function lockScienceLab(
 }
 
 /* =========================================
-   VERIFY VILLAGE ACCESS
+   VERIFY LOCATION ACCESS
 ========================================= */
 
 function verifyVillageAccess(
-  onSuccess = () => {}
+  onSuccess = () => {},
+  isSilentCheck = false
 ) {
 
   /* =========================
@@ -449,11 +450,15 @@ function verifyVillageAccess(
     !navigator.geolocation
   ) {
 
-    lockScienceLab(
+    if (!isSilentCheck) {
 
-      "Location is not supported on this device."
+      loginError.textContent =
 
-    );
+        "Location is not supported on this device.";
+
+      resetLoginButton();
+
+    }
 
     return;
 
@@ -468,11 +473,9 @@ function verifyVillageAccess(
     position => {
 
       const userLat =
-
         position.coords.latitude;
 
       const userLng =
-
         position.coords.longitude;
 
       const distance =
@@ -519,6 +522,36 @@ function verifyVillageAccess(
     error => {
 
       /* =====================
+         SILENT BACKGROUND CHECK
+      ===================== */
+
+      if (
+        isSilentCheck
+      ) {
+
+        lockScienceLab(
+
+          "Live village location required."
+
+        );
+
+        return;
+
+      }
+
+      /* =====================
+         NORMAL LOGIN FLOW
+      ===================== */
+
+      APP.loading = false;
+
+      loginBtn.disabled = false;
+
+      loginBtn.innerHTML =
+
+        "Enter Science Lab";
+
+      /* =====================
          PERMISSION DENIED
       ===================== */
 
@@ -526,11 +559,9 @@ function verifyVillageAccess(
         error.code === 1
       ) {
 
-        lockScienceLab(
+        loginError.textContent =
 
-          "Please allow location access to enter the Science Lab."
-
-        );
+          "Please allow location access and try again.";
 
       }
 
@@ -542,11 +573,9 @@ function verifyVillageAccess(
         error.code === 2
       ) {
 
-        lockScienceLab(
+        loginError.textContent =
 
-          "Unable to detect your location."
-
-        );
+          "Please turn on device location and try again.";
 
       }
 
@@ -558,11 +587,9 @@ function verifyVillageAccess(
         error.code === 3
       ) {
 
-        lockScienceLab(
+        loginError.textContent =
 
-          "Location request timed out."
-
-        );
+          "Location is taking too long. Please try again.";
 
       }
 
@@ -572,11 +599,9 @@ function verifyVillageAccess(
 
       else {
 
-        lockScienceLab(
+        loginError.textContent =
 
-          "Live location access required."
-
-        );
+          "Unable to access location.";
 
       }
 
@@ -584,11 +609,11 @@ function verifyVillageAccess(
 
     {
 
-      enableHighAccuracy: true,
+      enableHighAccuracy: false,
 
-      timeout: 15000,
+      timeout: 20000,
 
-      maximumAge: 0
+      maximumAge: 300000
 
     }
 
@@ -597,7 +622,7 @@ function verifyVillageAccess(
 }
 
 /* =========================================
-   START LIVE VILLAGE PROTECTION
+   START LIVE PROTECTION
 ========================================= */
 
 function startVillageProtection() {
@@ -624,7 +649,10 @@ function startVillageProtection() {
 
     setInterval(() => {
 
-      verifyVillageAccess();
+      verifyVillageAccess(
+        () => {},
+        true
+      );
 
     }, 900000);
 
@@ -643,7 +671,10 @@ function startVillageProtection() {
         "visible"
       ) {
 
-        verifyVillageAccess();
+        verifyVillageAccess(
+          () => {},
+          true
+        );
 
       }
 
@@ -673,10 +704,6 @@ async function login() {
 
   loginError.textContent = "";
 
-  /* =========================
-     VERIFY ACCESS
-  ========================= */
-
   verifyVillageAccess(
 
     () => {
@@ -695,7 +722,9 @@ async function login() {
 
       }, 700);
 
-    }
+    },
+
+    false
 
   );
 
@@ -711,7 +740,7 @@ bindClick(
 );
 
 /* =========================================
-   AUTO LOGIN SCREEN
+   AUTO LOGIN
 ========================================= */
 
 async function autoLogin() {
@@ -721,7 +750,6 @@ async function autoLogin() {
   );
 
 }
-
 
 /* =========================================
    OPEN GRADES
