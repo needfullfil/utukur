@@ -433,18 +433,20 @@ function lockScienceLab(
 
 }
 
+
 /* =========================================
    VERIFY LOCATION ACCESS
+   ULTRA PRODUCTION VERSION
 ========================================= */
 
-function verifyVillageAccess(
+async function verifyVillageAccess(
   onSuccess = () => {},
   isSilentCheck = false
 ) {
 
-  /* =========================
+  /* =====================================
      GEOLOCATION SUPPORT
-  ========================= */
+  ===================================== */
 
   if (
     !navigator.geolocation
@@ -464,183 +466,360 @@ function verifyVillageAccess(
 
   }
 
-  /* =========================
-     REQUEST LOCATION
-  ========================= */
+  /* =====================================
+     PERMISSION CHECK
+  ===================================== */
 
-  let resolved = false;
+  try {
 
-  const watchId = navigator.geolocation.watchPosition(
+    if (
+      navigator.permissions
+    ) {
 
-    position => {
+      const permission =
 
-      if (resolved) {
-        return;
-      }
+        await navigator.permissions.query({
 
-      const accuracy =
-        position.coords.accuracy;
+          name: "geolocation"
 
-      /* =========================
-         WAIT FOR REAL GPS
-      ========================= */
+        });
+
+      /* ===============================
+         BLOCKED
+      =============================== */
 
       if (
-        accuracy > 120
+        permission.state === "denied"
       ) {
+
+        if (!isSilentCheck) {
+
+          loginError.textContent =
+
+            "Location permission blocked. Please enable location access.";
+
+          resetLoginButton();
+
+        }
+
+        return;
+
+      }
+
+    }
+
+  } catch (_) {}
+
+  /* =====================================
+     GPS STABILIZATION
+  ===================================== */
+
+  return new Promise(resolve => {
+
+    const samples = [];
+
+    let finished = false;
+
+    let timeoutId = null;
+
+    /* =================================
+       CLEANUP
+    ================================= */
+
+    function cleanup() {
+
+      if (finished) {
         return;
       }
 
-      resolved = true;
+      finished = true;
 
       navigator.geolocation.clearWatch(
         watchId
       );
 
-      const userLat =
-        position.coords.latitude;
-
-      const userLng =
-        position.coords.longitude;
-
-      const distance =
-
-        calculateDistance(
-
-          userLat,
-          userLng,
-
-          VILLAGE_CENTER.lat,
-          VILLAGE_CENTER.lng
-
-        );
-
-      /* =========================
-         INSIDE VILLAGE
-      ========================= */
-
-      if (
-        distance <=
-        ALLOWED_RADIUS_KM
-      ) {
-
-        onSuccess();
-
-      }
-
-      /* =========================
-         OUTSIDE VILLAGE
-      ========================= */
-
-      else {
-
-        lockScienceLab(
-
-          "This Science Lab works only inside Utukur village."
-
-        );
-
-      }
-
-    },
-
-    error => {
-
-      navigator.geolocation.clearWatch(
-        watchId
+      clearTimeout(
+        timeoutId
       );
+
+    }
+
+    /* =================================
+       FAIL
+    ================================= */
+
+    function fail(message) {
+
+      cleanup();
 
       if (
         isSilentCheck
       ) {
 
         lockScienceLab(
-
           "Live village location required."
-
         );
+
+        resolve(false);
 
         return;
 
       }
 
-      APP.loading = false;
+      resetLoginButton();
 
-      loginBtn.disabled = false;
+      loginError.textContent =
+        message;
 
-      loginBtn.innerHTML =
-
-        "Enter Science Lab";
-
-      /* =========================
-         PERMISSION DENIED
-      ========================= */
-
-      if (
-        error.code === 1
-      ) {
-
-        loginError.textContent =
-
-          "Please allow location access.";
-
-      }
-
-      /* =========================
-         GPS NOT READY
-      ========================= */
-
-      else if (
-        error.code === 2
-      ) {
-
-        loginError.textContent =
-
-          "Waiting for GPS location...";
-
-      }
-
-      /* =========================
-         TIMEOUT
-      ========================= */
-
-      else if (
-        error.code === 3
-      ) {
-
-        loginError.textContent =
-
-          "Location request timed out.";
-
-      }
-
-      /* =========================
-         UNKNOWN
-      ========================= */
-
-      else {
-
-        loginError.textContent =
-
-          "Unable to access location.";
-
-      }
-
-    },
-
-    {
-
-      enableHighAccuracy: true,
-
-      timeout: 30000,
-
-      maximumAge: 0
+      resolve(false);
 
     }
 
-  );
+    /* =================================
+       SUCCESS
+    ================================= */
 
-  }
+    function success() {
+
+      cleanup();
+
+      onSuccess();
+
+      resolve(true);
+
+    }
+
+    /* =================================
+       GLOBAL TIMEOUT
+    ================================= */
+
+    timeoutId = setTimeout(() => {
+
+      fail(
+        "Unable to get stable GPS location."
+      );
+
+    }, 45000);
+
+    /* =================================
+       WATCH POSITION
+    ================================= */
+
+    const watchId =
+
+      navigator.geolocation.watchPosition(
+
+        position => {
+
+          if (finished) {
+            return;
+          }
+
+          const {
+
+            latitude,
+            longitude,
+            accuracy,
+            speed
+
+          } = position.coords;
+
+          /* ===========================
+             IGNORE BAD GPS
+          =========================== */
+
+          if (
+            accuracy > 100
+          ) {
+            return;
+          }
+
+          /* ===========================
+             IMPOSSIBLE SPEED FILTER
+          =========================== */
+
+          if (
+            speed &&
+            speed > 120
+          ) {
+            return;
+          }
+
+          /* ===========================
+             SAVE SAMPLE
+          =========================== */
+
+          samples.push({
+
+            lat: latitude,
+            lng: longitude,
+            accuracy
+
+          });
+
+          /* ===========================
+             NEED MULTIPLE SAMPLES
+          =========================== */
+
+          if (
+            samples.length < 3
+          ) {
+            return;
+          }
+
+          /* ===========================
+             USE BEST 3 SAMPLES
+          =========================== */
+
+          const bestSamples =
+
+            samples
+              .sort(
+                (a, b) => {
+
+                  return (
+                    a.accuracy -
+                    b.accuracy
+                  );
+
+                }
+              )
+              .slice(0, 3);
+
+          /* ===========================
+             AVERAGE LOCATION
+          =========================== */
+
+          const avgLat =
+
+            bestSamples.reduce(
+              (sum, sample) => {
+
+                return (
+                  sum +
+                  sample.lat
+                );
+
+              },
+              0
+            ) / bestSamples.length;
+
+          const avgLng =
+
+            bestSamples.reduce(
+              (sum, sample) => {
+
+                return (
+                  sum +
+                  sample.lng
+                );
+
+              },
+              0
+            ) / bestSamples.length;
+
+          /* ===========================
+             DISTANCE CHECK
+          =========================== */
+
+          const distance =
+
+            calculateDistance(
+
+              avgLat,
+              avgLng,
+
+              VILLAGE_CENTER.lat,
+              VILLAGE_CENTER.lng
+
+            );
+
+          /* ===========================
+             INSIDE VILLAGE
+          =========================== */
+
+          if (
+            distance <=
+            ALLOWED_RADIUS_KM
+          ) {
+
+            success();
+
+          }
+
+          /* ===========================
+             OUTSIDE VILLAGE
+          =========================== */
+
+          else {
+
+            fail(
+
+              "This Science Lab works only inside Utukur village."
+
+            );
+
+          }
+
+        },
+
+        error => {
+
+          if (
+            error.code === 1
+          ) {
+
+            fail(
+              "Please allow location access."
+            );
+
+          }
+
+          else if (
+            error.code === 2
+          ) {
+
+            fail(
+              "Waiting for GPS signal..."
+            );
+
+          }
+
+          else if (
+            error.code === 3
+          ) {
+
+            fail(
+              "Location request timed out."
+            );
+
+          }
+
+          else {
+
+            fail(
+              "Unable to access location."
+            );
+
+          }
+
+        },
+
+        {
+
+          enableHighAccuracy: true,
+
+          timeout: 30000,
+
+          maximumAge: 0
+
+        }
+
+      );
+
+  });
+
+}
 
 /* =========================================
    START LIVE PROTECTION
