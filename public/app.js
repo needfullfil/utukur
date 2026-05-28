@@ -32,7 +32,6 @@ window.addEventListener(
 
 const APP = {
 
-  credentials: [],
 
   currentGrade: "",
 
@@ -77,11 +76,6 @@ const loginBtn =
 const loginError =
   $("loginError");
 
-const usernameInput =
-  $("username");
-
-const passwordInput =
-  $("password");
 
 const gradeGrid =
   $("gradeGrid");
@@ -423,10 +417,6 @@ async function login() {
         ALLOWED_RADIUS_KM
       ) {
 
-        localStorage.setItem(
-          "villageAccess",
-          "true"
-        );
 
         openGrades();
 
@@ -494,16 +484,7 @@ bindClick(
 
 async function autoLogin() {
 
-  const existing =
-    localStorage.getItem(
-      "villageAccess"
-    );
-
-  if (existing === "true") {
-
-    openGrades();
-
-  }
+  return;
 
 }
 
@@ -1147,10 +1128,6 @@ bindClick(
 bindClick(
   "logoutBtn",
   () => {
-
-    localStorage.removeItem(
-      "scienceUser"
-    );
 
     location.reload();
 
