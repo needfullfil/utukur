@@ -1,5 +1,14 @@
+/* =========================================
+   VIDHWAAN KIDLAB
+   ULTRA PRODUCTION SW.JS
+========================================= */
+
+/* =========================================
+   CACHE VERSION
+========================================= */
+
 const CACHE_NAME =
-  "kidlab-v4";
+  "kidlab-v5";
 
 /* =========================================
    STATIC ASSETS
@@ -10,7 +19,6 @@ const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/main.css",
-  "/app.js",
   "/manifest.json",
 
   "/icons/logo.png",
@@ -84,9 +92,9 @@ self.addEventListener(
         })
         .then(async () => {
 
-          /* ===============================
-             ENABLE NAVIGATION PRELOAD
-          =============================== */
+          /* =========================
+             NAVIGATION PRELOAD
+          ========================= */
 
           if (
 
@@ -102,7 +110,11 @@ self.addEventListener(
 
           }
 
-          return self.clients.claim();
+          /* =========================
+             TAKE CONTROL
+          ========================= */
+
+          await self.clients.claim();
 
         })
 
@@ -119,9 +131,9 @@ self.addEventListener(
   "fetch",
   event => {
 
-    /* ===============================
+    /* =========================
        ONLY GET REQUESTS
-    =============================== */
+    ========================= */
 
     if (
       event.request.method !==
@@ -130,46 +142,30 @@ self.addEventListener(
       return;
     }
 
-    /* ===============================
-       NAVIGATION REQUESTS
-    =============================== */
+    const requestUrl =
+      new URL(
+        event.request.url
+      );
+
+    /* =====================================
+       NEVER CACHE APP.JS
+    ===================================== */
 
     if (
-      event.request.mode ===
-      "navigate"
+
+      requestUrl.pathname.includes(
+        "app.js"
+      )
+
     ) {
 
       event.respondWith(
 
-        fetch(event.request)
+        fetch(event.request, {
 
-          .then(response => {
+          cache: "no-store"
 
-            const responseClone =
-              response.clone();
-
-            caches
-              .open(CACHE_NAME)
-              .then(cache => {
-
-                cache.put(
-                  "/index.html",
-                  responseClone
-                );
-
-              });
-
-            return response;
-
-          })
-
-          .catch(() => {
-
-            return caches.match(
-              "/index.html"
-            );
-
-          })
+        })
 
       );
 
@@ -177,9 +173,42 @@ self.addEventListener(
 
     }
 
-    /* ===============================
-       CACHE FIRST
-    =============================== */
+    /* =====================================
+       NEVER CACHE HTML
+    ===================================== */
+
+    if (
+
+      event.request.mode ===
+      "navigate"
+
+    ) {
+
+      event.respondWith(
+
+        fetch(event.request, {
+
+          cache: "no-store"
+
+        })
+
+        .catch(() => {
+
+          return caches.match(
+            "/index.html"
+          );
+
+        })
+
+      );
+
+      return;
+
+    }
+
+    /* =====================================
+       CACHE FIRST FOR SAFE STATIC FILES
+    ===================================== */
 
     event.respondWith(
 
@@ -201,33 +230,51 @@ self.addEventListener(
 
         .then(response => {
 
-          /* ===========================
+          /* =========================
              INVALID RESPONSE
-          =========================== */
+          ========================= */
 
           if (
             !response ||
-            response.status !== 200 ||
-            response.type !== "basic"
+            response.status !== 200
           ) {
 
             return response;
 
           }
 
-          const responseClone =
-            response.clone();
+          /* =========================
+             CACHE SAFE FILES ONLY
+          ========================= */
 
-          caches
-            .open(CACHE_NAME)
-            .then(cache => {
+          if (
 
-              cache.put(
-                event.request,
-                responseClone
-              );
+            requestUrl.pathname.endsWith(".png") ||
+            requestUrl.pathname.endsWith(".jpg") ||
+            requestUrl.pathname.endsWith(".jpeg") ||
+            requestUrl.pathname.endsWith(".svg") ||
+            requestUrl.pathname.endsWith(".webp") ||
+            requestUrl.pathname.endsWith(".css") ||
+            requestUrl.pathname.endsWith(".json") ||
+            requestUrl.pathname.endsWith(".dat")
 
-            });
+          ) {
+
+            const responseClone =
+              response.clone();
+
+            caches
+              .open(CACHE_NAME)
+              .then(cache => {
+
+                cache.put(
+                  event.request,
+                  responseClone
+                );
+
+              });
+
+          }
 
           return response;
 
@@ -235,9 +282,9 @@ self.addEventListener(
 
         .catch(() => {
 
-          /* ===========================
-             FALLBACKS
-          =========================== */
+          /* =========================
+             IMAGE FALLBACK
+          ========================= */
 
           if (
 
