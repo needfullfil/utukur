@@ -1,0 +1,717 @@
+name: Vidhwaan-Science-Lab-Ultimate
+
+on:
+
+  workflow_dispatch:
+
+jobs:
+
+  build-science-data:
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+
+      # ======================================
+      # CHECKOUT
+      # ======================================
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ======================================
+      # SETUP NODE
+      # ======================================
+
+      - name: Setup-Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ======================================
+      # INSTALL SYSTEM TOOLS
+      # ======================================
+
+      - name: Install-System-Tools
+        run: |
+
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            unzip \
+            webp
+
+      # ======================================
+      # CLEAN OLD GENERATED FILES
+      # ======================================
+
+      - name: Clean-Old-Files
+        run: |
+
+          echo "================================"
+          echo "CLEANING OLD FILES"
+          echo "================================"
+
+          rm -rf public/data
+          rm -rf raw-dataset
+          rm -f build-science-data.js
+          rm -f credentials.json
+
+          mkdir -p public/data
+          mkdir -p public/data/grades
+          mkdir -p public/data/images
+          mkdir -p raw-dataset
+
+      # ======================================
+      # CREATE PACKAGE
+      # ======================================
+
+      - name: Create-Package
+        run: |
+
+          if [ ! -f package.json ]; then
+
+            echo '{
+              "name":"vidhwaan-kidlab",
+              "private":true,
+              "version":"1.0.0"
+            }' > package.json
+
+          fi
+
+      # ======================================
+      # INSTALL NODE PACKAGES
+      # ======================================
+
+      - name: Install-Dependencies
+        run: |
+
+          npm install \
+            fs-extra \
+            msgpackr
+
+      # ======================================
+      # DOWNLOAD DATASET JSON
+      # ======================================
+
+      - name: Download-ScienceQA-JSON
+        run: |
+
+          curl -L \
+            "https://raw.githubusercontent.com/lupantech/ScienceQA/main/data/scienceqa/problems.json" \
+            -o raw-dataset/problems.json
+
+      # ======================================
+      # DOWNLOAD IMAGE ZIPS
+      # ======================================
+
+      - name: Download-ScienceQA-Images
+        run: |
+
+          mkdir -p raw-dataset/images
+
+          cd raw-dataset/images
+
+          echo "================================"
+          echo "DOWNLOADING IMAGES"
+          echo "================================"
+
+          curl -L \
+            "https://scienceqa.s3.us-west-1.amazonaws.com/images/train.zip" \
+            -o train.zip
+
+          curl -L \
+            "https://scienceqa.s3.us-west-1.amazonaws.com/images/val.zip" \
+            -o val.zip
+
+          curl -L \
+            "https://scienceqa.s3.us-west-1.amazonaws.com/images/test.zip" \
+            -o test.zip
+
+          unzip -q train.zip -d train
+          unzip -q val.zip -d val
+          unzip -q test.zip -d test
+
+          rm -f *.zip
+
+      # ======================================
+      # CREATE ENGINE
+      # ======================================
+
+      - name: Create-Build-Engine
+        run: |
+
+          cat > build-science-data.js << 'EOF'
+
+          const fs =
+            require("fs-extra");
+
+          const path =
+            require("path");
+
+          const { pack } =
+            require("msgpackr");
+
+          // ====================================
+          // PATHS
+          // ====================================
+
+          const RAW =
+            "./raw-dataset/problems.json";
+
+          const IMAGES =
+            "./raw-dataset/images";
+
+          const OUTPUT =
+            "./public/data";
+
+          // ====================================
+          // HELPERS
+          // ====================================
+
+          function clean(value = "") {
+
+            return String(value)
+              .replace(/\\n/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+
+          }
+
+          function lectureSplit(text = "") {
+
+            return clean(text)
+
+              .split(/(?<=[.!?])\s+/)
+
+              .map(s => s.trim())
+
+              .filter(s => s.length > 15);
+
+          }
+
+          function scramble(buffer) {
+
+            return Buffer
+              .from(buffer)
+              .toString("base64")
+              .split("")
+              .reverse()
+              .join("");
+
+          }
+
+          function saveDat(data, output) {
+
+            const packed =
+              pack(data);
+
+            const scrambled =
+              scramble(packed);
+
+            fs.writeFileSync(
+              output,
+              scrambled
+            );
+
+          }
+
+          // ====================================
+          // LOAD DATASET
+          // ====================================
+
+          const raw =
+            JSON.parse(
+              fs.readFileSync(
+                RAW,
+                "utf8"
+              )
+            );
+
+          const grouped = {};
+
+          const usedImages =
+            [];
+
+          // ====================================
+          // FILTER QUESTIONS
+          // ====================================
+
+          for (
+            const key of
+            Object.keys(raw)
+          ) {
+
+            const item =
+              raw[key];
+
+            // NATURAL SCIENCE ONLY
+
+            if (
+
+              clean(item.subject)
+                .toLowerCase()
+
+              !==
+
+              "natural science"
+
+            ) {
+
+              continue;
+
+            }
+
+            // CLOSED CHOICE ONLY
+
+            if (
+
+              clean(item.task)
+                .toLowerCase()
+
+              !==
+
+              "closed choice"
+
+            ) {
+
+              continue;
+
+            }
+
+            const grade =
+              clean(item.grade)
+                .toLowerCase();
+
+            if (!grouped[grade]) {
+
+              grouped[grade] = [];
+
+            }
+
+            // ================================
+            // IMAGE
+            // ================================
+
+            let imagePath =
+              null;
+
+            if (item.image) {
+
+              const originalPath =
+
+                path.join(
+
+                  IMAGES,
+
+                  item.split,
+
+                  item.split,
+
+                  key,
+
+                  item.image
+
+                );
+
+              if (
+
+                fs.existsSync(
+                  originalPath
+                )
+
+              ) {
+
+                const outputFolder =
+
+                  path.join(
+
+                    OUTPUT,
+                    "images",
+                    item.split,
+                    key
+
+                  );
+
+                fs.ensureDirSync(
+                  outputFolder
+                );
+
+                const outputImage =
+
+                  path.join(
+
+                    outputFolder,
+
+                    "image.webp"
+
+                  );
+
+                usedImages.push({
+
+                  input:
+                    originalPath,
+
+                  output:
+                    outputImage
+
+                });
+
+                imagePath =
+
+                  `/data/images/${item.split}/${key}/image.webp`;
+
+              }
+
+            }
+
+            grouped[grade].push({
+
+              q:
+                clean(item.question),
+
+              img:
+                imagePath,
+
+              o:
+                item.choices
+                  .map(clean),
+
+              a:
+                Number(item.answer),
+
+              e:
+                clean(item.solution),
+
+              l:
+                lectureSplit(
+                  item.lecture
+                )
+
+            });
+
+          }
+
+          // ====================================
+          // CREATE QUIZZES
+          // ====================================
+
+          for (
+            const grade of
+            Object.keys(grouped)
+          ) {
+
+            const gradeFolder =
+
+              path.join(
+                OUTPUT,
+                "grades",
+                grade
+              );
+
+            fs.ensureDirSync(
+              gradeFolder
+            );
+
+            const files = [];
+
+            let quizNumber = 1;
+
+            const questions =
+              grouped[grade];
+
+            for (
+              let i = 0;
+              i < questions.length;
+              i += 10
+            ) {
+
+              const chunk =
+                questions.slice(
+                  i,
+                  i + 10
+                );
+
+              if (
+                chunk.length < 10
+              ) {
+                continue;
+              }
+
+              const fileName =
+                `quiz${quizNumber}.dat`;
+
+              saveDat(
+
+                {
+                  quiz:
+                    quizNumber,
+
+                  questions:
+                    chunk
+                },
+
+                path.join(
+                  gradeFolder,
+                  fileName
+                )
+
+              );
+
+              files.push(
+                fileName
+              );
+
+              quizNumber++;
+
+            }
+
+            saveDat(
+
+              {
+                files
+              },
+
+              path.join(
+                gradeFolder,
+                "index.dat"
+              )
+
+            );
+
+          }
+
+          // ====================================
+          // CREDENTIALS
+          // ====================================
+
+          const credentials = [];
+
+          function password(length = 14) {
+
+            const chars =
+              "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*";
+
+            let result = "";
+
+            for (
+              let i = 0;
+              i < length;
+              i++
+            ) {
+
+              result +=
+                chars.charAt(
+                  Math.floor(
+                    Math.random() *
+                    chars.length
+                  )
+                );
+
+            }
+
+            return result;
+
+          }
+
+          for (
+            let g = 2;
+            g <= 8;
+            g++
+          ) {
+
+            for (
+              let i = 1;
+              i <= 50;
+              i++
+            ) {
+
+              const id =
+                String(i)
+                  .padStart(3, "0");
+
+              credentials.push({
+
+                u:
+                  `vidhwaan${g}${id}`,
+
+                p:
+                  password(14)
+
+              });
+
+            }
+
+          }
+
+          fs.writeFileSync(
+
+            "./credentials.json",
+
+            JSON.stringify(
+              credentials,
+              null,
+              2
+            )
+
+          );
+
+          saveDat(
+
+            credentials,
+
+            path.join(
+              OUTPUT,
+              "credentials.dat"
+            )
+
+          );
+
+          // ====================================
+          // SAVE IMAGE LIST
+          // ====================================
+
+          fs.writeFileSync(
+
+            "./used-images.json",
+
+            JSON.stringify(
+              usedImages,
+              null,
+              2
+            )
+
+          );
+
+          console.log("");
+          console.log("================================");
+          console.log("SCIENCE LAB GENERATED");
+          console.log("================================");
+
+          for (
+            const grade of
+            Object.keys(grouped)
+          ) {
+
+            console.log(
+              grade,
+              grouped[grade].length
+            );
+
+          }
+
+          console.log(
+            "Used Images:",
+            usedImages.length
+          );
+
+          EOF
+
+      # ======================================
+      # RUN ENGINE
+      # ======================================
+
+      - name: Run-Build-Engine
+        run: |
+
+          node build-science-data.js
+
+      # ======================================
+      # CONVERT ONLY USED IMAGES TO WEBP
+      # ======================================
+
+      - name: Convert-Images-To-WEBP
+        run: |
+
+          echo "================================"
+          echo "CONVERTING USED IMAGES"
+          echo "================================"
+
+          node << 'EOF'
+
+          const fs =
+            require("fs");
+
+          const { execSync } =
+            require("child_process");
+
+          const images =
+            JSON.parse(
+              fs.readFileSync(
+                "./used-images.json",
+                "utf8"
+              )
+            );
+
+          for (
+            const image of images
+          ) {
+
+            try {
+
+              execSync(
+
+                `cwebp -q 72 "${image.input}" -o "${image.output}"`,
+
+                {
+                  stdio: "inherit"
+                }
+
+              );
+
+            } catch (e) {
+
+              console.log(
+                "FAILED:",
+                image.input
+              );
+
+            }
+
+          }
+
+          EOF
+
+      # ======================================
+      # SHOW FINAL SIZE
+      # ======================================
+
+      - name: Show-Final-Size
+        run: |
+
+          echo "================================"
+          echo "FINAL DATA SIZE"
+          echo "================================"
+
+          du -sh public/data
+
+          echo "================================"
+
+          find public/data/images \
+            -name "*.webp" \
+            | wc -l
+
+      # ======================================
+      # COMMIT
+      # ======================================
+
+      - name: Commit-And-Push
+        run: |
+
+          git config --global user.name \
+            "github-actions[bot]"
+
+          git config --global user.email \
+            "github-actions[bot]@users.noreply.github.com"
+
+          git add public/data
+          git add credentials.json
+
+          git commit -m \
+            "Generated optimized science assets" \
+            || echo "No changes"
+
+          git push

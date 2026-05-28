@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8" />
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+/>
+
+<title>
+KidLab by Vidhwaan
+</title>
+
+<meta
+  name="description"
+  content="Interactive Smart Science Learning Platform for Schools"
+/>
+
+<meta
+  name="theme-color"
+  content="#ffffff"
+/>
+
+<meta
+  name="mobile-web-app-capable"
+  content="yes"
+/>
+
+<meta
+  name="apple-mobile-web-app-capable"
+  content="yes"
+/>
+
+<meta
+  name="apple-mobile-web-app-status-bar-style"
+  content="default"
+/>
+
+<meta
+  name="apple-mobile-web-app-title"
+  content="KidLab"
+/>
+
+<meta
+  property="og:title"
+  content="KidLab by Vidhwaan"
+/>
+
+<meta
+  property="og:description"
+  content="Transform School Admissions Into Interactive Learning Experiences"
+/>
+
+<meta
+  property="og:type"
+  content="website"
+/>
+
+<meta
+  property="og:image"
+  content="/icons/icon-512.png"
+/>
+
+<link
+  rel="manifest"
+  href="/manifest.json"
+/>
+
+<link
+  rel="icon"
+  href="/icons/icon-192.png"
+/>
+
+<link
+  rel="preconnect"
+  href="https://fonts.googleapis.com"
+/>
+
+<link
+  rel="preconnect"
+  href="https://fonts.gstatic.com"
+  crossorigin
+/>
+
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+  rel="stylesheet"
+/>
+
+<link
+  rel="stylesheet"
+  href="./main.css"
+/>
+
+</head>
+
+<body>
+
+<!-- =========================================
+     SPLASH SCREEN
+========================================= -->
+
+<div id="appSplash">
+
+  <div class="splashGlow"></div>
+
+  <div class="splashLogoWrap">
+
+    <img
+      src="/icons/icon-192.png"
+      alt="KidLab"
+      class="splashLogo"
+    />
+
+    <h1>
+      KidLab
+    </h1>
+
+    <p>
+      by Vidhwaan Technology
+    </p>
+
+  </div>
+
+</div>
+
+<!-- =========================================
+     PARTICLES
+========================================= -->
+
+<div id="bgEffects">
+
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+
+</div>
+
+<!-- =========================================
+     APP
+========================================= -->
+
+<div id="app">
+
+  <!-- =====================================
+       HERO
+  ====================================== -->
+
+  <section id="heroSection">
+
+    <div class="heroOverlay"></div>
+
+    <header id="topBar">
+
+      <div id="brandWrap">
+
+        <img
+          src="/icons/icon-192.png"
+          alt="KidLab"
+          id="brandLogo"
+        />
+
+        <div>
+
+          <h1 id="brandTitle">
+            KidLab
+          </h1>
+
+          <p id="brandSub">
+            by Vidhwaan Technology
+          </p>
+
+        </div>
+
+      </div>
+
+      <button id="installBtn">
+        Install App
+      </button>
+
+    </header>
+
+    <div id="heroContent">
+
+      <div id="heroBadge">
+        🚀 Interactive Science Learning Platform
+      </div>
+
+      <h2 id="heroTitle">
+        Transform School Admissions Into
+        Interactive Learning Experiences
+      </h2>
+
+      <p id="heroDescription">
+
+        A next-generation mobile-first science learning platform designed for modern schools, future classrooms, and student engagement experiences.
+
+      </p>
+
+      <div id="schoolWelcome">
+
+        <h3 id="schoolTitle">
+          Welcome Students
+        </h3>
+
+        <p id="schoolPhone">
+          Admissions Contact
+        </p>
+
+      </div>
+
+      <div id="heroButtons">
+
+        <button id="startExperienceBtn">
+          Start Experience
+        </button>
+
+        <button id="exploreBtn">
+          Explore Platform
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- =====================================
+         PHONE MOCKUP
+    ====================================== -->
+
+    <div id="phoneMockup">
+
+      <div id="mockTop">
+
+        <span></span>
+        <span></span>
+        <span></span>
+
+      </div>
+
+      <div id="mockContent">
+
+        <div id="mockHeader">
+
+          <div id="mockAvatar">
+            🧪
+          </div>
+
+          <div>
+
+            <h3>
+              Grade 4
+            </h3>
+
+            <p>
+              Science Mission
+            </p>
+
+          </div>
+
+        </div>
+
+        <div id="mockQuestion">
+
+          What does pollen help a plant do?
+
+        </div>
+
+        <div class="mockOption activeOption">
+
+          Make seeds
+
+        </div>
+
+        <div class="mockOption">
+
+          Grow Bigger
+
+        </div>
+
+        <div class="mockOption">
+
+          Grow Leaves
+
+        </div>
+
+        <div id="mockProgress">
+
+          <div id="mockProgressBar"></div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================
+       FEATURES
+  ====================================== -->
+
+  <section class="section">
+
+    <div class="sectionHead">
+
+      <div class="sectionBadge">
+        Smart Learning Experience
+      </div>
+
+      <h2 class="sectionTitle">
+
+        Built For The Future Of Student Growth
+
+      </h2>
+
+      <p class="sectionDescription">
+
+        KidLab combines interactive science missions, progressive learning systems, immersive explanations, and mobile-first experiences to create a completely modern educational environment.
+
+      </p>
+
+    </div>
+
+    <div class="featureGrid">
+
+      <div class="featureCard">
+
+        <div class="featureIcon">
+          ⚡
+        </div>
+
+        <h3>
+          Ultra Fast
+        </h3>
+
+        <p>
+
+          Optimized for low-end Android devices with cloud-powered delivery and lightweight architecture.
+
+        </p>
+
+      </div>
+
+      <div class="featureCard">
+
+        <div class="featureIcon">
+          📱
+        </div>
+
+        <h3>
+          Native App Experience
+        </h3>
+
+        <p>
+
+          Install directly from browser like a real mobile application without needing the Play Store.
+
+        </p>
+
+      </div>
+
+      <div class="featureCard">
+
+        <div class="featureIcon">
+          🧠
+        </div>
+
+        <h3>
+          Progressive Learning
+        </h3>
+
+        <p>
+
+          Students unlock new science missions step-by-step while building understanding and confidence.
+
+        </p>
+
+      </div>
+
+      <div class="featureCard">
+
+        <div class="featureIcon">
+          🌍
+        </div>
+
+        <h3>
+          Global Science
+        </h3>
+
+        <p>
+
+          International-level science learning experiences focused on curiosity, logic, and real understanding.
+
+        </p>
+
+      </div>
+
+      <div class="featureCard">
+
+        <div class="featureIcon">
+          🚀
+        </div>
+
+        <h3>
+          Admission Engagement
+        </h3>
+
+        <p>
+
+          Transform traditional school admissions into interactive digital learning experiences.
+
+        </p>
+
+      </div>
+
+      <div class="featureCard">
+
+        <div class="featureIcon">
+          ☁️
+        </div>
+
+        <h3>
+          Cloud Powered
+        </h3>
+
+        <p>
+
+          Built using scalable modern cloud infrastructure for fast and reliable student experiences.
+
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================
+       SCHOOL QR SECTION
+  ====================================== -->
+
+  <section class="section">
+
+    <div class="sectionHead">
+
+      <div class="sectionBadge">
+        School Campaign System
+      </div>
+
+      <h2 class="sectionTitle">
+
+        Generate School QR Admission Experience
+
+      </h2>
+
+      <p class="sectionDescription">
+
+        Schools can instantly generate branded QR onboarding cards for students during admissions and summer camps.
+
+      </p>
+
+    </div>
+
+    <div id="generatorCard">
+
+      <div class="inputGroup">
+
+        <label>
+          School Name
+        </label>
+
+        <input
+          type="text"
+          id="schoolInput"
+          placeholder="Enter School Name"
+        />
+
+      </div>
+
+      <div class="inputGroup">
+
+        <label>
+          Contact Number
+        </label>
+
+        <input
+          type="tel"
+          id="phoneInput"
+          placeholder="Enter Mobile Number"
+        />
+
+      </div>
+
+      <button id="generateBtn">
+
+        Generate Admission QR Card
+
+      </button>
+
+    </div>
+
+    <!-- =====================================
+         QR PREVIEW
+    ====================================== -->
+
+    <div id="qrPreview">
+
+      <div id="qrCard">
+
+        <div id="qrHeader">
+
+          <img
+            src="/icons/icon-192.png"
+            alt="KidLab"
+          />
+
+          <div>
+
+            <h3>
+              KidLab
+            </h3>
+
+            <p>
+              by Vidhwaan Technology
+            </p>
+
+          </div>
+
+        </div>
+
+        <div id="qrSchoolName">
+
+          ABC School
+
+        </div>
+
+        <div id="qrTagline">
+
+          Interactive Science Learning Experience
+
+        </div>
+
+        <div id="qrBox">
+
+          <canvas id="qrCanvas"></canvas>
+
+        </div>
+
+        <div id="qrPhone">
+
+          Contact: 9440246101
+
+        </div>
+
+        <div id="qrBottom">
+
+          Scan QR To Install App
+
+        </div>
+
+      </div>
+
+      <button id="downloadCardBtn">
+
+        Download QR Card
+
+      </button>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================
+       EXPERIENCE SECTION
+  ====================================== -->
+
+  <section class="section">
+
+    <div class="sectionHead">
+
+      <div class="sectionBadge">
+        Student Experience
+      </div>
+
+      <h2 class="sectionTitle">
+
+        Designed To Feel Like The Future
+
+      </h2>
+
+      <p class="sectionDescription">
+
+        From the first QR scan to quiz progression and immersive explanations, every interaction is optimized for student engagement and emotional learning impact.
+
+      </p>
+
+    </div>
+
+    <div id="experienceGrid">
+
+      <div class="experienceCard">
+
+        <div class="expNumber">
+          01
+        </div>
+
+        <h3>
+          Student Installs App
+        </h3>
+
+        <p>
+
+          Students scan the school QR code and instantly install the KidLab app experience.
+
+        </p>
+
+      </div>
+
+      <div class="experienceCard">
+
+        <div class="expNumber">
+          02
+        </div>
+
+        <h3>
+          Select Grade
+        </h3>
+
+        <p>
+
+          Students choose their grade level and begin interactive science learning missions.
+
+        </p>
+
+      </div>
+
+      <div class="experienceCard">
+
+        <div class="expNumber">
+          03
+        </div>
+
+        <h3>
+          Progressive Unlocks
+        </h3>
+
+        <p>
+
+          Completing quizzes unlocks new missions, encouraging deeper exploration and curiosity.
+
+        </p>
+
+      </div>
+
+      <div class="experienceCard">
+
+        <div class="expNumber">
+          04
+        </div>
+
+        <h3>
+          Learn With Understanding
+        </h3>
+
+        <p>
+
+          Every question includes explanations and lecture content to improve real conceptual understanding.
+
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================
+       CTA
+  ====================================== -->
+
+  <section id="ctaSection">
+
+    <div id="ctaCard">
+
+      <div id="ctaGlow"></div>
+
+      <h2>
+
+        The Future Of School Admissions Is Interactive
+
+      </h2>
+
+      <p>
+
+        Create unforgettable learning experiences for students and parents through next-generation digital science engagement.
+
+      </p>
+
+      <button id="ctaBtn">
+
+        Start School Partnership
+
+      </button>
+
+    </div>
+
+  </section>
+
+  <!-- =====================================
+       FOOTER
+  ====================================== -->
+
+  <footer id="footer">
+
+    <div id="footerLogo">
+
+      <img
+        src="/icons/icon-192.png"
+        alt="KidLab"
+      />
+
+      <div>
+
+        <h3>
+          KidLab
+        </h3>
+
+        <p>
+          by Vidhwaan Technology
+        </p>
+
+      </div>
+
+    </div>
+
+    <div id="footerText">
+
+      © 2026 KidLab by Vidhwaan Technology
+
+    </div>
+
+  </footer>
+
+</div>
+
+<!-- =========================================
+     QR LIBRARY
+========================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<!-- =========================================
+     APP
+========================================= -->
+
+<script src="./app.js"></script>
+
+
+<!-- =========================================
+     FLOATING WHATSAPP
+========================================= -->
+
+<a
+  href="https://wa.me/919440246101?text=Hello%20Vidhwaan%20Team,%20we%20want%20the%20KidLab%20Science%20App%20for%20our%20school.%20Please%20share%20details."
+  target="_blank"
+  id="whatsappFloat"
+  aria-label="WhatsApp"
+>
+
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 32 32"
+    fill="currentColor"
+  >
+
+    <path d="M19.11 17.21c-.29-.15-1.69-.83-1.95-.92-.26-.1-.45-.15-.64.15-.19.29-.74.92-.91 1.11-.17.19-.34.22-.63.07-.29-.15-1.21-.45-2.31-1.43-.85-.76-1.43-1.69-1.6-1.98-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.19-.29.29-.49.1-.19.05-.37-.02-.51-.07-.15-.64-1.54-.88-2.11-.23-.56-.46-.48-.64-.49h-.55c-.19 0-.49.07-.74.34-.26.29-.98.95-.98 2.32 0 1.36 1 2.68 1.14 2.87.15.19 1.95 2.98 4.73 4.17.66.29 1.18.46 1.58.59.66.21 1.26.18 1.73.11.53-.08 1.69-.69 1.93-1.35.24-.66.24-1.22.17-1.35-.07-.13-.26-.21-.55-.36zM16.02 3C8.84 3 3 8.82 3 16c0 2.54.74 5 2.14 7.11L3 29l6.08-2.08A12.93 12.93 0 0016.02 29C23.2 29 29 23.18 29 16S23.2 3 16.02 3zm0 23.67c-2.12 0-4.2-.57-6.01-1.66l-.43-.25-3.61 1.24 1.18-3.52-.28-.46A10.6 10.6 0 015.33 16c0-5.9 4.79-10.69 10.69-10.69 2.85 0 5.53 1.11 7.55 3.13a10.63 10.63 0 013.13 7.56c0 5.9-4.79 10.67-10.68 10.67z"/>
+
+  </svg>
+
+</a>
+
+</body>
+</html>

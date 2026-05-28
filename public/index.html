@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <!-- ===================================== -->
+  <!-- BASIC -->
+  <!-- ===================================== -->
+
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="
+      width=device-width,
+      initial-scale=1,
+      maximum-scale=1,
+      viewport-fit=cover
+    "
+  />
+
+  <meta
+    http-equiv="X-UA-Compatible"
+    content="IE=edge"
+  />
+
+  <!-- ===================================== -->
+  <!-- TITLE -->
+  <!-- ===================================== -->
+
+  <title>
+    Vidhwaan KidLab — World-Class Science Quiz Missions
+  </title>
+
+  <!-- ===================================== -->
+  <!-- SEO -->
+  <!-- ===================================== -->
+
+  <meta
+    name="description"
+    content="
+      Vidhwaan KidLab is a premium world-class science learning platform for school students featuring interactive quiz missions in Physics, Chemistry, and Biology.
+    "
+  />
+
+  <meta
+    name="keywords"
+    content="
+      Vidhwaan,
+      KidLab,
+      Science Quiz,
+      Physics,
+      Chemistry,
+      Biology,
+      Science Learning,
+      Science App,
+      Kids Education,
+      School Science,
+      Interactive Learning,
+      STEM,
+      Science Missions
+    "
+  />
+
+  <meta
+    name="author"
+    content="Vidhwaan"
+  />
+
+  <meta
+    name="robots"
+    content="
+      index,
+      follow,
+      max-image-preview:large
+    "
+  />
+
+  <link
+    rel="canonical"
+    href="https://kidlab.vidhwaan.com/"
+  />
+
+  <!-- ===================================== -->
+  <!-- THEME -->
+  <!-- ===================================== -->
+
+  <meta
+    name="theme-color"
+    content="#ffffff"
+  />
+
+  <meta
+    name="mobile-web-app-capable"
+    content="yes"
+  />
+
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  />
+
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="default"
+  />
+
+  <meta
+    name="apple-mobile-web-app-title"
+    content="KidLab"
+  />
+
+  <!-- ===================================== -->
+  <!-- FAVICON -->
+  <!-- ===================================== -->
+
+  <link
+    rel="icon"
+    href="/favicon.ico"
+    sizes="any"
+  />
+
+  <link
+    rel="apple-touch-icon"
+    href="/icons/icon-192.png"
+  />
+
+  <!-- ===================================== -->
+  <!-- OPEN GRAPH -->
+  <!-- ===================================== -->
+
+  <meta
+    property="og:type"
+    content="website"
+  />
+
+  <meta
+    property="og:url"
+    content="https://kidlab.vidhwaan.com/"
+  />
+
+  <meta
+    property="og:title"
+    content="
+      Vidhwaan KidLab — World-Class Science Quiz Missions
+    "
+  />
+
+  <meta
+    property="og:description"
+    content="
+      Premium science learning platform for Physics, Chemistry and Biology quiz missions.
+    "
+  />
+
+  <meta
+    property="og:image"
+    content="
+      https://kidlab.vidhwaan.com/icons/logo.png
+    "
+  />
+
+  <!-- ===================================== -->
+  <!-- TWITTER -->
+  <!-- ===================================== -->
+
+  <meta
+    name="twitter:card"
+    content="summary_large_image"
+  />
+
+  <meta
+    name="twitter:title"
+    content="
+      Vidhwaan KidLab
+    "
+  />
+
+  <meta
+    name="twitter:description"
+    content="
+      World-Class Science Quiz Missions
+    "
+  />
+
+  <meta
+    name="twitter:image"
+    content="
+      https://kidlab.vidhwaan.com/icons/logo.png
+    "
+  />
+
+  <!-- ===================================== -->
+  <!-- PERFORMANCE -->
+  <!-- ===================================== -->
+
+  <link
+    rel="preconnect"
+    href="https://cdn.jsdelivr.net"
+  />
+
+  <link
+    rel="dns-prefetch"
+    href="https://cdn.jsdelivr.net"
+  />
+
+  <!-- ===================================== -->
+  <!-- PWA -->
+  <!-- ===================================== -->
+
+  <link
+    rel="manifest"
+    href="./manifest.json"
+  />
+
+  <link
+    rel="icon"
+    href="./favicon.ico"
+  />  
+
+  <!-- ===================================== -->
+  <!-- CSS -->
+  <!-- ===================================== -->
+
+  <link
+    rel="stylesheet"
+    href="./main.css"
+  />
+
+</head>
+
+<body>
+
+  <div id="appSplash">
+
+    <img
+      src="/icons/icon-192.png"
+      alt="KidLab"
+    />
+
+  </div>
+
+  <!-- ===================================== -->
+  <!-- APP -->
+  <!-- ===================================== -->
+
+  <div id="app">
+
+    <!-- ================================= -->
+    <!-- LOGIN PAGE -->
+    <!-- ================================= -->
+
+    <section
+      id="loginPage"
+      class="page active"
+    >
+
+      <div class="centerCard">
+
+        <div class="logo">
+
+          <img
+            src="./icons/mascot.png"
+            alt="Vidhwaan KidLab Logo"
+          />
+
+        </div>
+
+        <h1>
+          Vidhwaan KidLab
+        </h1>
+
+        <p class="subtitle">
+          World-Class Science Quiz Missions
+        </p>
+
+        <input
+          type="text"
+          id="username"
+          placeholder="Username"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+        />
+
+        <input
+          type="password"
+          id="password"
+          placeholder="Password"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+        />
+
+        <button id="loginBtn">
+          Enter Science Lab
+        </button>
+
+        <p id="loginError"></p>
+
+      </div>
+
+    </section>
+
+    <!-- ================================= -->
+    <!-- GRADE PAGE -->
+    <!-- ================================= -->
+
+    <section
+      id="gradePage"
+      class="page"
+    >
+
+      <header class="topBar">
+
+        <button
+          class="topButton"
+          id="logoutBtn"
+        >
+          Logout
+        </button>
+
+        <h2>
+          Select Grade
+        </h2>
+
+      </header>
+
+      <div
+        id="gradeGrid"
+        class="cardGrid"
+      ></div>
+
+    </section>
+
+
+
+
+
+    <!-- ================================= -->
+    <!-- QUIZ LIST PAGE -->
+    <!-- ================================= -->
+
+    <section
+      id="quizListPage"
+      class="page"
+    >
+
+      <header class="topBar">
+
+        <button
+          class="topButton"
+          id="backToGrades"
+        >
+          ← Grades
+        </button>
+
+        <h2 id="quizListTitle">
+          Quizzes
+        </h2>
+
+      </header>
+
+      <div
+        id="quizGrid"
+        class="cardGrid"
+      ></div>
+
+    </section>
+
+    <!-- ================================= -->
+    <!-- QUIZ PAGE -->
+    <!-- ================================= -->
+
+    <section
+      id="quizPage"
+      class="page"
+    >
+
+      <header class="topBar">
+
+        <button
+          class="topButton"
+          id="backToQuizList"
+        >
+          ← Quizzes
+        </button>
+
+        <div id="questionCounter">
+          Question 1 / 10
+        </div>
+
+      </header>
+
+      <div class="quizContainer">
+
+        <div id="questionCard">
+
+          <div id="questionText">
+            Loading question...
+          </div>
+
+          <div id="questionImageWrap">
+
+            <img
+              id="questionImage"
+              loading="lazy"
+              decoding="async"
+              alt="Science Illustration"
+            />
+
+          </div>
+
+        </div>
+
+        <div id="optionsContainer">
+        </div>
+
+        <div id="answerResult">
+        </div>
+
+        <div id="explanationBox">
+        </div>
+
+        <div id="lectureContainer">
+
+          <button id="lectureToggle">
+            View Lecture
+          </button>
+
+          <div id="lectureBox">
+          </div>
+
+        </div>
+
+      </div>
+
+      <button id="nextQuestionBtn">
+        Next →
+      </button>
+
+    </section>
+
+    <!-- ================================= -->
+    <!-- SCORE PAGE -->
+    <!-- ================================= -->
+
+    <section
+      id="scorePage"
+      class="page"
+    >
+
+      <div class="centerCard">
+
+        <div class="scoreIcon">
+          🏆
+        </div>
+
+        <h1>
+          Quiz Complete
+        </h1>
+
+        <div id="finalScore">
+          0 / 10
+        </div>
+
+        <p id="scoreMessage">
+        </p>
+
+        <button id="retakeBtn">
+          Retake Quiz
+        </button>
+
+        <button id="backToQuizPageBtn">
+          Go To Grade Quizzes
+        </button>
+
+      </div>
+
+    </section>
+
+  </div>
+
+  <!-- ===================================== -->
+  <!-- MSGPACK -->
+  <!-- ===================================== -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@msgpack/msgpack/dist.es5+umd/msgpack.min.js"></script>
+
+  <!-- ===================================== -->
+  <!-- APP -->
+  <!-- ===================================== -->
+
+  <script
+    src="./app.js"
+    defer
+  ></script>
+
+  <!-- ===================================== -->
+  <!-- SERVICE WORKER -->
+  <!-- ===================================== -->
+
+  <script>
+
+    if (
+      "serviceWorker" in navigator
+    ) {
+
+      window.addEventListener(
+        "load",
+        () => {
+
+          navigator.serviceWorker
+            .register("./sw.js");
+
+        }
+      );
+
+    }
+
+  </script>
+
+  <button id="installBtn">
+    Install App
+  </button>
+
+</body>
+
+</html>

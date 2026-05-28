@@ -1,0 +1,540 @@
+name: Deploy-Vidhwaan-Science-Lab
+
+on:
+
+
+  workflow_dispatch:
+
+jobs:
+
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+
+      # ======================================
+      # CHECKOUT
+      # ======================================
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ======================================
+      # SETUP NODE
+      # ======================================
+
+      - name: Setup-Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ======================================
+      # INSTALL DEPENDENCIES
+      # ======================================
+
+      - name: Install-Dependencies
+        run: |
+
+          npm install \
+            javascript-obfuscator \
+            clean-css-cli \
+            html-minifier-terser \
+            terser \
+            fs-extra
+
+      # ======================================
+      # CREATE BUILD ENGINE
+      # ======================================
+
+      - name: Create-Build-Engine
+        run: |
+
+          cat > build-production.js << 'EOF'
+
+          const fs =
+            require("fs-extra");
+
+          const crypto =
+            require("crypto");
+
+          const {
+            execSync
+          } = require("child_process");
+
+          // ===================================
+          // HASH FUNCTION
+          // ===================================
+
+          function hashFile(content) {
+
+            return crypto
+              .createHash("sha256")
+              .update(content)
+              .digest("hex")
+              .slice(0, 12);
+
+          }
+
+          // ===================================
+          // RESET DIST
+          // ===================================
+
+          fs.removeSync("./dist");
+
+          fs.ensureDirSync("./dist");
+
+          // ===================================
+          // COPY PUBLIC
+          // ===================================
+
+          fs.copySync(
+            "./public",
+            "./dist"
+          );
+
+          // ===================================
+          // COPY ROOT FILES
+          // ===================================
+
+          if (
+            fs.existsSync("./favicon.ico")
+          ) {
+
+            fs.copySync(
+              "./favicon.ico",
+              "./dist/favicon.ico"
+            );
+
+          }
+
+          // ===================================
+          // OBFUSCATE JS
+          // ===================================
+
+          console.log("");
+          console.log("================================");
+          console.log("OBFUSCATING JS");
+          console.log("================================");
+
+          execSync(`
+
+            npx javascript-obfuscator \
+              dist/app.js \
+              --output dist/app.js \
+              --compact true \
+              --control-flow-flattening false \
+              --control-flow-flattening-threshold 1 \
+              --dead-code-injection false \
+              --dead-code-injection-threshold 0.4 \
+              --disable-console-output true \
+              --identifier-names-generator hexadecimal \
+              --rename-globals false \
+              --rename-properties false \
+              --self-defending false \
+              --simplify true \
+              --split-strings true \
+              --split-strings-chunk-length 5 \
+              --string-array true \
+              --string-array-encoding base64 \
+              --string-array-threshold 1 \
+              --unicode-escape-sequence true
+
+          `, {
+            stdio: "inherit"
+          });
+
+          // ===================================
+          // MINIFY CSS
+          // ===================================
+
+          console.log("");
+          console.log("================================");
+          console.log("MINIFYING CSS");
+          console.log("================================");
+
+          execSync(`
+
+            npx cleancss \
+              -O2 \
+              -o dist/main.css \
+              public/main.css
+
+          `, {
+            stdio: "inherit"
+          });
+
+          // ===================================
+          // MINIFY HTML
+          // ===================================
+
+          console.log("");
+          console.log("================================");
+          console.log("MINIFYING HTML");
+          console.log("================================");
+
+          execSync(`
+
+            npx html-minifier-terser \
+              --collapse-whitespace \
+              --remove-comments \
+              --remove-redundant-attributes \
+              --remove-script-type-attributes \
+              --remove-tag-whitespace \
+              --use-short-doctype \
+              --minify-css true \
+              --minify-js true \
+              public/index.html \
+              -o dist/index.html
+
+          `, {
+            stdio: "inherit"
+          });
+
+          // ===================================
+          // MINIFY MODEL PAGE
+          // ===================================
+
+          if (
+            fs.existsSync(
+              "./public/model/index.html"
+            )
+          ) {
+
+            console.log("");
+            console.log("================================");
+            console.log("MINIFYING MODEL PAGE");
+            console.log("================================");
+
+            fs.ensureDirSync(
+              "./dist/model"
+            );
+
+            execSync(`
+
+              npx html-minifier-terser \
+                --collapse-whitespace \
+                --remove-comments \
+                --remove-redundant-attributes \
+                --remove-script-type-attributes \
+                --remove-tag-whitespace \
+                --use-short-doctype \
+                --minify-css true \
+                --minify-js true \
+                public/model/index.html \
+                -o dist/model/index.html
+
+            `, {
+              stdio: "inherit"
+            });
+
+          }
+
+
+          // ===================================
+          // PROTECT CAMPAIGN PAGE
+          // ===================================
+
+          if (
+            fs.existsSync(
+              "./public/campaign/index.html"
+            )
+          ) {
+
+            console.log("");
+            console.log("================================");
+            console.log("PROTECTING CAMPAIGN");
+            console.log("================================");
+
+            fs.ensureDirSync(
+              "./dist/campaign"
+            );
+
+            /* ==============================
+               OBFUSCATE CAMPAIGN JS
+            ============================== */
+
+            execSync(`
+
+              npx javascript-obfuscator \
+                public/campaign/app.js \
+                --output dist/campaign/app.js \
+                --compact true \
+                --control-flow-flattening false \
+                --dead-code-injection false \
+                --disable-console-output true \
+                --identifier-names-generator hexadecimal \
+                --rename-globals false \
+                --rename-properties false \
+                --self-defending false \
+                --simplify true \
+                --split-strings true \
+                --split-strings-chunk-length 5 \
+                --string-array true \
+                --string-array-encoding base64 \
+                --string-array-threshold 1 \
+                --unicode-escape-sequence true
+
+            `, {
+              stdio: "inherit"
+            });
+
+            /* ==============================
+               MINIFY CAMPAIGN CSS
+            ============================== */
+
+            execSync(`
+
+              npx cleancss \
+                -O2 \
+                -o dist/campaign/main.css \
+                public/campaign/main.css
+
+            `, {
+              stdio: "inherit"
+            });
+
+            /* ==============================
+               MINIFY CAMPAIGN HTML
+            ============================== */
+
+            execSync(`
+
+              npx html-minifier-terser \
+                --collapse-whitespace \
+                --remove-comments \
+                --remove-redundant-attributes \
+                --remove-script-type-attributes \
+                --remove-tag-whitespace \
+                --use-short-doctype \
+                --minify-css true \
+                --minify-js true \
+                public/campaign/index.html \
+                -o dist/campaign/index.html
+
+            `, {
+              stdio: "inherit"
+            });
+
+            /* ==============================
+               HASH CAMPAIGN FILES
+            ============================== */
+
+            const campaignJs =
+              fs.readFileSync(
+                "./dist/campaign/app.js",
+                "utf8"
+              );
+
+            const campaignCss =
+              fs.readFileSync(
+                "./dist/campaign/main.css",
+                "utf8"
+              );
+
+            const campaignJsHash =
+              hashFile(campaignJs);
+
+            const campaignCssHash =
+              hashFile(campaignCss);
+
+            const newCampaignJs =
+              `app.${campaignJsHash}.js`;
+
+            const newCampaignCss =
+              `main.${campaignCssHash}.css`;
+
+            fs.renameSync(
+              "./dist/campaign/app.js",
+              `./dist/campaign/${newCampaignJs}`
+            );
+
+            fs.renameSync(
+              "./dist/campaign/main.css",
+              `./dist/campaign/${newCampaignCss}`
+            );
+
+            /* ==============================
+               UPDATE HTML REFERENCES
+            ============================== */
+
+            let campaignHtml =
+              fs.readFileSync(
+                "./dist/campaign/index.html",
+                "utf8"
+              );
+
+            campaignHtml =
+              campaignHtml.replace(
+                "./app.js",
+                `./${newCampaignJs}`
+              );
+
+            campaignHtml =
+              campaignHtml.replace(
+                "./main.css",
+                `./${newCampaignCss}`
+              );
+
+            fs.writeFileSync(
+              "./dist/campaign/index.html",
+              campaignHtml
+            );
+
+            console.log("");
+            console.log("================================");
+            console.log("CAMPAIGN PROTECTED");
+            console.log("================================");
+
+          }
+
+          // ===================================
+          // MINIFY SERVICE WORKER
+          // ===================================
+
+          if (
+            fs.existsSync("./public/sw.js")
+          ) {
+
+            console.log("");
+            console.log("================================");
+            console.log("MINIFYING SW");
+            console.log("================================");
+
+            execSync(`
+
+              npx terser \
+                public/sw.js \
+                -o dist/sw.js \
+                --compress \
+                --mangle
+
+            `, {
+              stdio: "inherit"
+            });
+
+          }
+
+          // ===================================
+          // HASH ASSETS
+          // ===================================
+
+          const appJs =
+            fs.readFileSync(
+              "./dist/app.js",
+              "utf8"
+            );
+
+          const css =
+            fs.readFileSync(
+              "./dist/main.css",
+              "utf8"
+            );
+
+          const jsHash =
+            hashFile(appJs);
+
+          const cssHash =
+            hashFile(css);
+
+          const newJs =
+            `app.${jsHash}.js`;
+
+          const newCss =
+            `main.${cssHash}.css`;
+
+          fs.renameSync(
+            "./dist/app.js",
+            `./dist/${newJs}`
+          );
+
+          fs.renameSync(
+            "./dist/main.css",
+            `./dist/${newCss}`
+          );
+
+          // ===================================
+          // UPDATE HTML REFERENCES
+          // ===================================
+
+          let html =
+            fs.readFileSync(
+              "./dist/index.html",
+              "utf8"
+            );
+
+          html = html.replace(
+            "./app.js",
+            `./${newJs}`
+          );
+
+          html = html.replace(
+            "./main.css",
+            `./${newCss}`
+          );
+
+          fs.writeFileSync(
+            "./dist/index.html",
+            html
+          );
+
+          // ===================================
+          // LOGS
+          // ===================================
+
+          console.log("");
+          console.log("================================");
+          console.log("PRODUCTION BUILD COMPLETE");
+          console.log("================================");
+          console.log("");
+
+          console.log(
+            "JS:",
+            newJs
+          );
+
+          console.log(
+            "CSS:",
+            newCss
+          );
+
+          console.log("");
+          console.log("================================");
+
+          EOF
+
+      # ======================================
+      # BUILD
+      # ======================================
+
+      - name: Build-Production
+        run: |
+
+          node build-production.js
+
+      # ======================================
+      # SHOW DIST FILES
+      # ======================================
+
+      - name: Show-Dist
+        run: |
+
+          echo "================================"
+          echo "DIST FILES"
+          echo "================================"
+
+          find dist -type f
+
+      # ======================================
+      # DEPLOY TO CLOUDFLARE
+      # ======================================
+
+      - name: Deploy-To-Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=vidhwaan-science-lab

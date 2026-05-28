@@ -1,0 +1,79 @@
+name: Convert Images To WEBP
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  convert:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install WEBP Tools
+        run: |
+
+          sudo apt-get update
+
+          sudo apt-get install -y webp
+
+      - name: Convert PNG JPG JPEG To WEBP
+        run: |
+
+          echo "================================="
+          echo "CONVERTING IMAGES TO WEBP"
+          echo "================================="
+
+          find public/data/images \
+            \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) \
+            | while read file; do
+
+              webp_file="${file%.*}.webp"
+
+              echo "Converting: $file"
+
+              cwebp \
+                -q 75 \
+                "$file" \
+                -o "$webp_file"
+
+            done
+
+      - name: Remove Old PNG JPG JPEG
+        run: |
+
+          echo "================================="
+          echo "REMOVING OLD IMAGES"
+          echo "================================="
+
+          find public/data/images \
+            \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) \
+            -delete
+
+      - name: Show WEBP Count
+        run: |
+
+          echo "================================="
+          echo "WEBP COUNT"
+          echo "================================="
+
+          find public/data/images \
+            -iname "*.webp" \
+            | wc -l
+
+      - name: Commit WEBP Images
+        run: |
+
+          git config --global user.name "github-actions[bot]"
+
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add public/data/images
+
+          git commit -m "Converted images to WEBP" || echo "No changes"
+
+          git push
