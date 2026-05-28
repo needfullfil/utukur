@@ -298,12 +298,18 @@ async function loadDat(url) {
 const VILLAGE_CENTER = {
 
   lat: 14.239078,
-
   lng: 79.739651
 
 };
 
 const ALLOWED_RADIUS_KM = 2;
+
+/* =========================================
+   ACCESS SESSION
+========================================= */
+
+const ACCESS_KEY =
+  "utukurVillageAccess";
 
 /* =========================================
    DISTANCE CALCULATION
@@ -359,6 +365,46 @@ function calculateDistance(
 }
 
 /* =========================================
+   RESET BUTTON
+========================================= */
+
+function resetLoginButton() {
+
+  APP.loading = false;
+
+  loginBtn.disabled = false;
+
+  loginBtn.innerHTML =
+    "Enter Science Lab";
+
+}
+
+/* =========================================
+   SUCCESS LOGIN
+========================================= */
+
+function allowVillageAccess() {
+
+  localStorage.setItem(
+    ACCESS_KEY,
+    "true"
+  );
+
+  loginBtn.innerHTML =
+    "Welcome To Science Lab ✨";
+
+  loginBtn.style.opacity =
+    "1";
+
+  setTimeout(() => {
+
+    openGrades();
+
+  }, 700);
+
+}
+
+/* =========================================
    ENTER APP
 ========================================= */
 
@@ -372,23 +418,79 @@ async function login() {
 
   loginBtn.disabled = true;
 
-  loginBtn.textContent =
-    "Checking Location...";
+  loginBtn.innerHTML =
+
+    "Detecting Village Location...";
 
   loginError.textContent = "";
+
+  /* =========================
+     GEOLOCATION SUPPORT
+  ========================= */
 
   if (
     !navigator.geolocation
   ) {
 
     loginError.textContent =
-      "Location not supported on this device.";
+
+      "Location is not supported on this device.";
 
     resetLoginButton();
 
     return;
 
   }
+
+  /* =========================
+     PERMISSION CHECK
+  ========================= */
+
+  try {
+
+    if (
+      navigator.permissions
+    ) {
+
+      const permission =
+
+        await navigator.permissions.query({
+
+          name: "geolocation"
+
+        });
+
+      /* =====================
+         DENIED
+      ===================== */
+
+      if (
+        permission.state === "denied"
+      ) {
+
+        loginError.innerHTML =
+
+          "Please enable location access in browser settings.";
+
+        resetLoginButton();
+
+        return;
+
+      }
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.log(error);
+
+  }
+
+  /* =========================
+     REQUEST LOCATION
+  ========================= */
 
   navigator.geolocation.getCurrentPosition(
 
@@ -412,29 +514,74 @@ async function login() {
 
         );
 
+      /* =====================
+         INSIDE VILLAGE
+      ===================== */
+
       if (
         distance <=
         ALLOWED_RADIUS_KM
       ) {
 
-
-        openGrades();
-
-      } else {
-
-        loginError.textContent =
-          "You should be inside village to use this app.";
+        allowVillageAccess();
 
       }
 
-      resetLoginButton();
+      /* =====================
+         OUTSIDE VILLAGE
+      ===================== */
+
+      else {
+
+        loginError.textContent =
+
+          "This Science Lab is available only inside Utukur village.";
+
+        resetLoginButton();
+
+      }
 
     },
 
-    () => {
+    error => {
 
-      loginError.textContent =
-        "Location permission required.";
+      if (
+        error.code === 1
+      ) {
+
+        loginError.textContent =
+
+          "Please allow location access.";
+
+      }
+
+      else if (
+        error.code === 2
+      ) {
+
+        loginError.textContent =
+
+          "Unable to detect your location.";
+
+      }
+
+      else if (
+        error.code === 3
+      ) {
+
+        loginError.textContent =
+
+          "Location request timed out.";
+
+      }
+
+      else {
+
+        loginError.textContent =
+
+          "Location access required.";
+
+      }
 
       resetLoginButton();
 
@@ -443,29 +590,12 @@ async function login() {
     {
 
       enableHighAccuracy: true,
-
-      timeout: 10000,
-
+      timeout: 15000,
       maximumAge: 0
 
     }
 
   );
-
-}
-
-/* =========================================
-   RESET BUTTON
-========================================= */
-
-function resetLoginButton() {
-
-  APP.loading = false;
-
-  loginBtn.disabled = false;
-
-  loginBtn.textContent =
-    "Enter Science Lab";
 
 }
 
@@ -484,10 +614,21 @@ bindClick(
 
 async function autoLogin() {
 
-  return;
+  const access =
+
+    localStorage.getItem(
+      ACCESS_KEY
+    );
+
+  if (
+    access === "true"
+  ) {
+
+    openGrades();
+
+  }
 
 }
-
 /* =========================================
    OPEN GRADES
 ========================================= */
