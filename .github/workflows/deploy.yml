@@ -30,7 +30,7 @@ jobs:
       - name: Setup-Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
       # ======================================
       # INSTALL DEPENDENCIES
@@ -537,4 +537,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.18.0"
           command: pages deploy dist --project-name=vidhwaan-village-science-lab
