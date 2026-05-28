@@ -468,9 +468,34 @@ function verifyVillageAccess(
      REQUEST LOCATION
   ========================= */
 
-  navigator.geolocation.getCurrentPosition(
+  let resolved = false;
+
+  const watchId = navigator.geolocation.watchPosition(
 
     position => {
+
+      if (resolved) {
+        return;
+      }
+
+      const accuracy =
+        position.coords.accuracy;
+
+      /* =========================
+         WAIT FOR REAL GPS
+      ========================= */
+
+      if (
+        accuracy > 120
+      ) {
+        return;
+      }
+
+      resolved = true;
+
+      navigator.geolocation.clearWatch(
+        watchId
+      );
 
       const userLat =
         position.coords.latitude;
@@ -490,9 +515,9 @@ function verifyVillageAccess(
 
         );
 
-      /* =====================
+      /* =========================
          INSIDE VILLAGE
-      ===================== */
+      ========================= */
 
       if (
         distance <=
@@ -503,9 +528,9 @@ function verifyVillageAccess(
 
       }
 
-      /* =====================
+      /* =========================
          OUTSIDE VILLAGE
-      ===================== */
+      ========================= */
 
       else {
 
@@ -521,9 +546,9 @@ function verifyVillageAccess(
 
     error => {
 
-      /* =====================
-         SILENT BACKGROUND CHECK
-      ===================== */
+      navigator.geolocation.clearWatch(
+        watchId
+      );
 
       if (
         isSilentCheck
@@ -539,10 +564,6 @@ function verifyVillageAccess(
 
       }
 
-      /* =====================
-         NORMAL LOGIN FLOW
-      ===================== */
-
       APP.loading = false;
 
       loginBtn.disabled = false;
@@ -551,9 +572,9 @@ function verifyVillageAccess(
 
         "Enter Science Lab";
 
-      /* =====================
+      /* =========================
          PERMISSION DENIED
-      ===================== */
+      ========================= */
 
       if (
         error.code === 1
@@ -561,13 +582,13 @@ function verifyVillageAccess(
 
         loginError.textContent =
 
-          "Please allow location access and try again.";
+          "Please allow location access.";
 
       }
 
-      /* =====================
-         POSITION UNAVAILABLE
-      ===================== */
+      /* =========================
+         GPS NOT READY
+      ========================= */
 
       else if (
         error.code === 2
@@ -575,13 +596,13 @@ function verifyVillageAccess(
 
         loginError.textContent =
 
-          "Please turn on device location and try again.";
+          "Waiting for GPS location...";
 
       }
 
-      /* =====================
+      /* =========================
          TIMEOUT
-      ===================== */
+      ========================= */
 
       else if (
         error.code === 3
@@ -589,13 +610,13 @@ function verifyVillageAccess(
 
         loginError.textContent =
 
-          "Location is taking too long. Please try again.";
+          "Location request timed out.";
 
       }
 
-      /* =====================
-         UNKNOWN ERROR
-      ===================== */
+      /* =========================
+         UNKNOWN
+      ========================= */
 
       else {
 
@@ -609,17 +630,15 @@ function verifyVillageAccess(
 
     {
 
-      enableHighAccuracy: false,
+      enableHighAccuracy: true,
 
-      timeout: 20000,
+      timeout: 30000,
 
-      maximumAge: 300000
+      maximumAge: 0
 
     }
 
   );
-
-}
 
 /* =========================================
    START LIVE PROTECTION
